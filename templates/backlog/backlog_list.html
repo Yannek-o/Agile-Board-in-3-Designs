@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load agile static %}
+{% block title %}Product Backlog · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Product Backlog</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Planung</div>
+    <h1>Product Backlog</h1>
+    <p>Anforderungen priorisieren, schätzen und für Sprints vorbereiten</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-ghost" href="{% url 'projects:labels' project.key %}">Labels</a>
+    <a class="btn btn-ghost" href="{% url 'backlog:export_csv' project.key %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" download>CSV-Export</a>
+    {% if access.can_manage_backlog %}<a class="btn btn-ghost" href="{% url 'backlog:import_csv' project.key %}">CSV-Import</a>{% endif %}
+    {% if access.can_manage_backlog %}<a class="btn btn-accent" href="{% url 'backlog:create' project.key %}">+ Neuer Eintrag</a>{% endif %}
+  </div>
+</div>
+{% include "backlog/_tabs.html" with active_tab="list" %}
+{% if project.product_goal %}
+<div class="ab-goal mb-3"><span class="label me-3">PRODUCT GOAL</span>{{ project.product_goal }}</div>
+{% endif %}
+<form class="ab-filterbar" method="get" role="search" aria-label="Backlog filtern">
+  <label class="visually-hidden" for="f-q">Suche</label>
+  <input id="f-q" class="form-control search" type="search" name="q" value="{{ filters.q }}" placeholder="Nach Titel oder ID suchen …">
+  <label class="visually-hidden" for="f-type">Typ</label>
+  <select id="f-type" class="form-select" name="type"><option value="">Typ: Alle</option>{% for value, label in type_choices %}<option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <label class="visually-hidden" for="f-priority">Priorität</label>
+  <select id="f-priority" class="form-select" name="priority"><option value="">Priorität: Alle</option>{% for value, label in priority_choices %}<option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <label class="visually-hidden" for="f-status">Status</label>
+  <select id="f-status" class="form-select" name="status"><option value="">Status: Alle</option>{% for value, label in status_choices %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <label class="visually-hidden" for="f-assignee">Bearbeiter</label>
+  <select id="f-assignee" class="form-select" name="assignee"><option value="">Bearbeiter: Alle</option><option value="none" {% if filters.assignee == 'none' %}selected{% endif %}>Nicht zugewiesen</option>{% for membership in members %}<option value="{{ membership.user.pk }}" {% if filters.assignee == membership.user.pk|stringformat:'s' %}selected{% endif %}>{{ membership.user.display_name }}</option>{% endfor %}</select>
+  {% if labels %}
+  <label class="visually-hidden" for="f-label">Label</label>
+  <select id="f-label" class="form-select" name="label"><option value="">Label: Alle</option>{% for label in labels %}<option value="{{ label.pk }}" {% if filters.label == label.pk|stringformat:'s' %}selected{% endif %}>{{ label.name }}</option>{% endfor %}</select>
+  {% endif %}
+  {% if epics %}
+  <label class="visually-hidden" for="f-epic">Epic</label>
+  <select id="f-epic" class="form-select" name="epic"><option value="">Epic: Alle</option>{% for epic in epics %}<option value="{{ epic.pk }}" {% if filters.epic == epic.pk|stringformat:'s' %}selected{% endif %}>{{ epic.key }} · {{ epic.title }}</option>{% endfor %}</select>
+  {% endif %}
+  {% if releases %}
+  <label class="visually-hidden" for="f-release">Release</label>
+  <select id="f-release" class="form-select" name="release"><option value="">Release: Alle</option>{% for release in releases %}<option value="{{ release.pk }}" {% if filters.release == release.pk|stringformat:'s' %}selected{% endif %}>{{ release.name }}</option>{% endfor %}</select>
+  {% endif %}
+  <label class="visually-hidden" for="f-sort">Sortierung</label>
+  <select id="f-sort" class="form-select" name="sort">{% for value, label in sort_choices %}<option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>Sortierung: {{ label }}</option>{% endfor %}</select>
+  <div class="form-check align-self-center">
+    <input class="form-check-input" type="checkbox" name="blocked" value="1" id="f-blocked" {% if filters.blocked == '1' %}checked{% endif %}>
+    <label class="form-check-label" for="f-blocked">Nur blockierte</label>
+  </div>
+  <div class="form-check align-self-center">
+    <input class="form-check-input" type="checkbox" name="archived" value="1" id="f-archived" {% if filters.archived == '1' %}checked{% endif %}>
+    <label class="form-check-label" for="f-archived">Archiv</label>
+  </div>
+  <button class="btn btn-ghost" type="submit">Anwenden</button>
+  <a class="btn btn-ghost" href="{% url 'backlog:list' project.key %}">Zurücksetzen</a>
+</form>
+<div class="ab-saved-filters" aria-label="Gespeicherte Filter">
+  {% for saved in saved_filters %}
+    <span class="ab-filter-chip{% if saved.query == current_query %} is-active{% endif %}">
+      <a href="?{{ saved.query }}" title="{% if saved.shared %}Geteilt von {{ saved.user.display_name }}{% else %}Privat{% endif %}">{% if saved.shared %}👥 {% endif %}{{ saved.name }}</a>
+      {% if saved.user_id == user.pk %}<form method="post" action="{% url 'backlog:delete_filter' project.key saved.pk %}">{% csrf_token %}<button type="submit" class="btn-link-plain" aria-label="Filter {{ saved.name }} löschen">×</button></form>{% endif %}
+    </span>
+  {% endfor %}
+  {% if current_query %}
+    <form class="ab-save-filter" method="post" action="{% url 'backlog:save_filter' project.key %}">
+      {% csrf_token %}
+      <input type="hidden" name="query" value="{{ current_query }}">
+      <label class="visually-hidden" for="filter-name">Name des Filters</label>
+      <input id="filter-name" class="form-control form-control-sm" name="name" maxlength="60" required placeholder="Filtername …">
+      <label class="form-check-label"><input class="form-check-input" type="checkbox" name="shared"> Teilen</label>
+      <button class="btn btn-ghost btn-sm" type="submit">Filter speichern</button>
+    </form>
+  {% endif %}
+</div>
+{% if access.can_change_status %}
+<form id="bulk-form" class="ab-bulkbar" method="post" action="{% url 'backlog:bulk' project.key %}" data-bulk-form hidden>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <strong data-bulk-count>0 ausgewählt</strong>
+  <label class="visually-hidden" for="bulk-action">Aktion</label>
+  <select id="bulk-action" class="form-select form-select-sm" name="action" data-bulk-action>
+    <option value="status">Status setzen</option>
+    {% if not bulk_status_only %}
+    <option value="assignee">Bearbeiter setzen</option>
+    <option value="priority">Priorität setzen</option>
+    <option value="sprint">In Sprint verschieben</option>
+    <option value="release">Release setzen</option>
+    <option value="archive">Archivieren</option>
+    {% endif %}
+  </select>
+  <label class="visually-hidden" for="bulk-value">Wert</label>
+  <select id="bulk-value" class="form-select form-select-sm" name="value" data-bulk-value>
+    {% for value, label in project.status_choices %}<option data-for="status" value="{{ value }}">{{ label }}</option>{% endfor %}
+    {% if not bulk_status_only %}
+    <option data-for="assignee" value="none">Nicht zugewiesen</option>
+    {% for membership in members %}<option data-for="assignee" value="{{ membership.user.pk }}">{{ membership.user.display_name }}</option>{% endfor %}
+    {% for value, label in priority_choices %}<option data-for="priority" value="{{ value }}">{{ label }}</option>{% endfor %}
+    <option data-for="sprint" value="none">Zurück ins Backlog</option>
+    {% for sprint in open_sprints %}<option data-for="sprint" value="{{ sprint.number }}">{{ sprint.label }}</option>{% endfor %}
+    <option data-for="release" value="none">Kein Release</option>
+    {% for release in open_releases %}<option data-for="release" value="{{ release.pk }}">{{ release.name }}</option>{% endfor %}
+    {% endif %}
+  </select>
+  <button class="btn btn-accent btn-sm" type="submit">Anwenden</button>
+  <button class="btn btn-ghost btn-sm" type="button" data-bulk-clear>Auswahl aufheben</button>
+</form>
+{% endif %}
+<div class="ab-table-wrap">
+  <table class="table ab-table table-hover" {% if can_reorder %}data-reorder-url="{% url 'backlog:reorder' project.key %}" data-offset="{{ page_obj.start_index|add:'-1' }}"{% endif %}>
+    <caption class="visually-hidden">Product Backlog von {{ project.name }}</caption>
+    <thead>
+      <tr>
+        {% if access.can_change_status %}<th scope="col" class="ab-check-col"><input class="form-check-input" type="checkbox" data-bulk-all aria-label="Alle auswählen"></th>{% endif %}
+        {% if can_reorder %}<th scope="col"><span class="visually-hidden">Reihenfolge</span></th>{% endif %}
+        <th scope="col">ID</th><th scope="col">Aufgabe / User Story</th><th scope="col">Typ</th><th scope="col">Priorität</th><th scope="col">Punkte</th><th scope="col">Person</th><th scope="col">Sprint</th><th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+      <tr data-item="{{ item.number }}" {% if can_reorder %}draggable="true"{% endif %}>
+        {% if access.can_change_status %}<td class="ab-check-col"><input class="form-check-input" type="checkbox" name="items" value="{{ item.number }}" form="bulk-form" data-bulk-item aria-label="{{ item.key }} auswählen"></td>{% endif %}
+        {% if can_reorder %}
+        <td class="text-nowrap">
+          <span class="drag-handle" aria-hidden="true" title="Ziehen zum Sortieren">⋮⋮</span>
+          <form class="d-inline" method="post" action="{% url 'backlog:reorder' project.key %}">{% csrf_token %}<input type="hidden" name="item" value="{{ item.number }}"><input type="hidden" name="position" value="{{ page_obj.start_index|add:forloop.counter0|add:'-2' }}"><button class="btn-link-plain" type="submit" aria-label="{{ item.key }} nach oben" {% if forloop.first and page_obj.number == 1 %}disabled{% endif %}>▲</button></form>
+          <form class="d-inline" method="post" action="{% url 'backlog:reorder' project.key %}">{% csrf_token %}<input type="hidden" name="item" value="{{ item.number }}"><input type="hidden" name="position" value="{{ page_obj.start_index|add:forloop.counter0 }}"><button class="btn-link-plain" type="submit" aria-label="{{ item.key }} nach unten" {% if forloop.last and not page_obj.has_next %}disabled{% endif %}>▼</button></form>
+        </td>
+        {% endif %}
+        <td><a class="item-key" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.key }}</a></td>
+        <td>
+          <a class="text-reset text-decoration-none" href="{% url 'backlog:detail' project.key item.number %}">{{ item.title }}</a>
+          {% if item.is_blocked %}<span class="ab-badge badge-blocked ms-1">Blockiert</span>{% endif %}
+          {% for label in item.labels.all %}<span class="ab-badge ms-1" style="background: {{ label.color }}33; color: {{ label.color }}">{{ label.name }}</span>{% endfor %}
+        </td>
+        <td>{{ item.get_item_type_display }}</td>
+        <td><span class="ab-badge {{ item.priority|badge_class }}">{{ item.get_priority_display }}</span></td>
+        <td>{{ item.story_points|default_if_none:"–" }}</td>
+        <td>{% if item.assignee %}{% include "includes/avatar.html" with user=item.assignee small=True %}{% else %}<span class="text-muted">–</span>{% endif %}</td>
+        <td>{% for entry in item.open_sprint_entries %}<a href="{% url 'sprints:detail' project.key entry.sprint.number %}" class="small">{{ entry.sprint.label }}</a>{% empty %}<span class="text-muted">–</span>{% endfor %}</td>
+        <td><span class="ab-badge {{ item.status|badge_class }}">{{ item|status_label }}</span></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="10" class="text-muted">Keine Einträge gefunden.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="text-muted small mt-2">{% if can_reorder %}Backlog-Reihenfolge per Drag &amp; Drop oder mit ▲/▼ ändern. {% elif access.can_manage_backlog %}Die Reihenfolge lässt sich nur in der ungefilterten Ansicht nach Backlog-Reihenfolge ändern. {% endif %}Story Points sind relative Schätzungen.</p>
+{% include "includes/pagination.html" %}
+{% endblock %}
+{% block scripts %}<script src="{% asset 'js/backlog.js' %}"></script>{% endblock %}

@@ -1,0 +1,1 @@
+{% autoescape off %}[{{ project.key }}] {{ sprint.label }} {% if event == "started" %}gestartet{% else %}abgeschlossen{% endif %}{% endautoescape %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}API-Tokens{% endblock %}
+{% block breadcrumb %}<a href="{% url 'accounts:profile' %}">Mein Profil</a> / <strong>API-Tokens</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div><div class="eyebrow">Mein Profil</div><h1>API-Tokens</h1><p>Persönliche Zugänge für Skripte und Integrationen – mit deinen Rechten</p></div>
+</div>
+{% if new_token %}
+<div class="alert alert-success" role="status">
+  <strong>Neues Token – nur jetzt sichtbar.</strong> Bitte sicher ablegen; es wird nur als Hash gespeichert.
+  <div class="api-token-value mt-2"><code id="new-token">{{ new_token }}</code><button type="button" class="btn btn-ghost btn-sm" data-copy-target="new-token">Kopieren</button></div>
+</div>
+{% endif %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ab-card">
+      <h2>Meine Tokens</h2>
+      <div class="ab-table-wrap">
+        <table class="table ab-table">
+          <thead><tr><th>Bezeichnung</th><th>Präfix</th><th>Erstellt</th><th>Zuletzt genutzt</th><th><span class="visually-hidden">Aktion</span></th></tr></thead>
+          <tbody>
+          {% for token in tokens %}
+            <tr>
+              <td>{{ token.name }}</td>
+              <td><code>{{ token.prefix }}…</code></td>
+              <td>{{ token.created_at|date:"d.m.Y" }}</td>
+              <td>{{ token.last_used_at|date:"d.m.Y H:i"|default:"nie" }}</td>
+              <td class="text-end"><form method="post" action="{% url 'api:token_delete' token.pk %}" onsubmit="return confirm('Token „{{ token.name|escapejs }}“ widerrufen?');">{% csrf_token %}<button class="btn btn-ghost btn-sm" type="submit">Widerrufen</button></form></td>
+            </tr>
+          {% empty %}<tr><td colspan="5" class="text-muted">Noch keine Tokens.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form class="d-flex gap-2 mt-3" method="post">
+        {% csrf_token %}
+        <label class="visually-hidden" for="token-name">Bezeichnung</label>
+        <input id="token-name" class="form-control" name="name" maxlength="60" required placeholder="z. B. CI-Pipeline">
+        <button class="btn btn-accent text-nowrap" type="submit">Token erstellen</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="ab-card">
+      <h2>Schnellstart</h2>
+      <p class="small text-muted">Token im Header <code>Authorization: Bearer …</code> mitsenden. Antworten sind JSON; es gelten dieselben Projektrechte wie in der Oberfläche.</p>
+      <pre class="small"><code>GET   /api/v1/projects/
+GET   /api/v1/projects/&lt;KEY&gt;/items/?status=todo&amp;limit=50
+POST  /api/v1/projects/&lt;KEY&gt;/items/
+GET   /api/v1/projects/&lt;KEY&gt;/items/&lt;nr&gt;/
+PATCH /api/v1/projects/&lt;KEY&gt;/items/&lt;nr&gt;/
+GET   /api/v1/projects/&lt;KEY&gt;/sprints/</code></pre>
+      <pre class="small mb-0"><code>curl -H "Authorization: Bearer ab_…" \
+  -X PATCH -H "Content-Type: application/json" \
+  -d '{"status": "done", "version": 4}' \
+  {{ request.scheme }}://{{ request.get_host }}/api/v1/projects/HELP/items/5/</code></pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll("[data-copy-target]").forEach(function (button) {
+  button.addEventListener("click", function () {
+    var text = document.getElementById(button.dataset.copyTarget).textContent;
+    navigator.clipboard.writeText(text).then(function () { button.textContent = "Kopiert ✓"; });
+  });
+});
+</script>
+{% endblock %}

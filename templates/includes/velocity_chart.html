@@ -1,0 +1,25 @@
+{% load l10n %}{% if velocity_data %}
+<details class="ab-card ab-collapsible {{ extra_class }}" open>
+  <summary><h2 id="velocity-heading">Velocity</h2><span class="ms-auto ab-badge badge-info">Ø {{ velocity_data.average|floatformat:"-1" }} SP erledigt</span></summary>
+  <div class="small text-muted d-flex gap-3 justify-content-end mt-2">
+    <span><span class="chart-legend committed" aria-hidden="true"></span> Geplant</span>
+    <span><span class="chart-legend completed" aria-hidden="true"></span> Erledigt</span>
+    <span><span class="chart-legend average" aria-hidden="true"></span> Durchschnitt</span>
+  </div>
+  {% localize off %}<svg class="chart velocity" viewBox="0 0 {{ velocity_data.width }} {{ velocity_data.height }}" role="img" aria-labelledby="velocity-heading">
+    {% for line in velocity_data.gridlines %}
+      <line class="grid{% if line.value == 0 %} axis{% endif %}" x1="{{ velocity_data.plot_left }}" y1="{{ line.y }}" x2="{{ velocity_data.plot_right }}" y2="{{ line.y }}"/>
+      <text class="label" x="{{ velocity_data.plot_left|add:'-8' }}" y="{{ line.y }}" dy="4" text-anchor="end">{{ line.value }}</text>
+    {% endfor %}
+    {% for bar in velocity_data.bars %}
+      <g class="bar-group" style="--ab-i: {{ forloop.counter0 }}">
+        <title>{{ bar.label }}: {{ bar.completed }} von {{ bar.committed }} SP erledigt ({{ bar.percent }} %)</title>
+        <rect class="bar committed" x="{{ bar.committed_x }}" y="{{ bar.committed_y }}" width="{{ bar.bar_width }}" height="{{ bar.committed_height }}" rx="3"/>
+        <rect class="bar completed" x="{{ bar.completed_x }}" y="{{ bar.completed_y }}" width="{{ bar.bar_width }}" height="{{ bar.completed_height }}" rx="3"/>
+        <text class="label" x="{{ bar.center }}" y="{{ velocity_data.label_y }}" text-anchor="middle">{{ bar.label }}</text>
+      </g>
+    {% endfor %}
+    <line class="average" x1="{{ velocity_data.plot_left }}" y1="{{ velocity_data.average_y }}" x2="{{ velocity_data.plot_right }}" y2="{{ velocity_data.average_y }}"/>
+  </svg>{% endlocalize %}
+</details>
+{% endif %}

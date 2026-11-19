@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}{% if item %}{{ item.key }} bearbeiten{% else %}Neuer Eintrag{% endif %}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backlog:list' project.key %}">{{ project.key }} Backlog</a> / <strong>{% if item %}{{ item.key }}{% else %}Neuer Eintrag{% endif %}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Product Backlog</div>
+    <h1>{% if item %}{{ item.key }} bearbeiten{% else %}Neuer Backlog-Eintrag{% endif %}</h1>
+    {% if item and not access.can_manage_backlog %}<p>Planungsfelder (Titel, Typ, Priorität, Punkte, Labels, Fälligkeit) pflegen Mitglieder mit Backlog-Freigabe.</p>{% endif %}
+  </div>
+</div>
+<form method="post" enctype="multipart/form-data" novalidate class="item-form-layout{% if form.has_side_fields %} has-side{% endif %}">
+  {% csrf_token %}
+  {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+  <div class="ab-card item-form-main">
+    {% include "includes/form_fields.html" %}
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-accent">Speichern</button>
+      <a class="btn btn-ghost" href="{% if next_url %}{{ next_url }}{% elif item %}{% url 'backlog:detail' project.key item.number %}{% else %}{% url 'backlog:list' project.key %}{% endif %}">Abbrechen</a>
+    </div>
+  </div>
+  {% if form.has_side_fields %}
+  <aside class="item-form-side" data-item-attachments data-max-bytes="{{ upload_limit_bytes }}" data-accept="{{ upload_accept }}">
+    <section class="ab-card" aria-labelledby="attachments-title">
+      <h2 class="side-title" id="attachments-title">Anhänge</h2>
+      <label class="dropzone" for="{{ form.attachments.id_for_label }}" data-dropzone>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Dateien hierher ziehen oder klicken</strong>
+        <span>Screenshot einfügen mit <kbd>Strg</kbd>+<kbd>V</kbd></span>
+        <small>max. {{ upload_limit_mb }} MB je Datei</small>
+      </label>
+      {{ form.attachments }}
+      <ul class="upload-list" data-upload-list aria-live="polite"></ul>
+      <ul class="errorlist" data-upload-errors>{% for error in form.attachments.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+    </section>
+    <section class="ab-card" aria-labelledby="weblinks-title">
+      <h2 class="side-title" id="weblinks-title">Links</h2>
+      <div class="link-list" data-link-list>
+        {% for url in form.web_links.value %}{% if url %}
+        <div class="link-row"><input type="url" name="web_links" class="form-control" value="{{ url }}" placeholder="https://…" aria-label="Link"><button type="button" class="btn btn-danger-soft btn-sm" data-link-remove aria-label="Link entfernen">×</button></div>
+        {% endif %}{% endfor %}
+        <div class="link-row"><input type="url" name="web_links" class="form-control" placeholder="https://…" aria-label="Link"><button type="button" class="btn btn-danger-soft btn-sm" data-link-remove aria-label="Link entfernen">×</button></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm mt-2" data-link-add>+ Weiterer Link</button>
+      {% if form.web_links.errors %}<ul class="errorlist">{% for error in form.web_links.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </section>
+  </aside>
+  {% endif %}
+</form>
+{% endblock %}
+{% block scripts %}{% if form.has_side_fields %}<script src="{% asset 'js/item-form.js' %}"></script>{% endif %}{% endblock %}

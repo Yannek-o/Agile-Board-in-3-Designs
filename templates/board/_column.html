@@ -1,0 +1,51 @@
+{% load agile %}<section class="board-column{% if column.over_limit %} over-limit{% endif %}" data-status="{{ column.status }}" {% if column.wip_limit %}data-wip-limit="{{ column.wip_limit }}"{% endif %} aria-labelledby="col-{{ lane.key }}-{{ column.status }}">
+  <header><h2 id="col-{{ lane.key }}-{{ column.status }}">{{ column.label }}</h2><span class="board-count" aria-label="Anzahl{% if column.wip_limit %}, WIP-Limit {{ column.wip_limit }}{% endif %}">{{ column.items|length }}{% if column.wip_limit and swimlane == "none" %}<span class="board-limit">/{{ column.wip_limit }}</span>{% endif %}</span></header>
+  <div class="board-cards">
+    {% for item in column.items %}
+    <article class="board-card priority-{{ item.priority }}{% if item.is_overdue %} overdue{% endif %}{% if item.is_blocked %} blocked{% endif %}" data-item="{{ item.number }}" data-version="{{ item.version }}" data-status="{{ item.status }}" {% if board_editable %}draggable="true"{% endif %}>
+      <div class="card-top">
+        <a class="item-key small" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.key }}</a>
+        <span class="card-priority priority-{{ item.priority }}">{{ item.get_priority_display }}</span>
+      </div>
+      {% if item.epic %}<span class="epic-chip" style="--epic: {{ item.epic.display_color }}" title="Epic {{ item.epic.key }}">{{ item.epic.title }}</span>{% endif %}
+      <a class="title" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.title }}</a>
+      <div class="d-flex flex-wrap gap-1">
+        {% if item.is_overdue %}<span class="ab-badge badge-overdue">Überfällig seit {{ item.due_date|date:"d.m." }}</span>{% endif %}
+        {% if item.is_blocked %}<span class="ab-badge badge-blocked" title="{{ item.blocked_reason }}">Blockiert</span>{% endif %}
+        {% if item.open_blocker_count %}<span class="ab-badge badge-danger" title="Offene Einträge, die diesen Eintrag blockieren">Blockiert durch {{ item.open_blocker_count }}</span>{% endif %}
+        {% for label in item.labels.all %}<span class="ab-badge" style="background: {{ label.color }}33; color: {{ label.color }}">{{ label.name }}</span>{% endfor %}
+      </div>
+      <div class="meta">
+        <span>{{ item.story_points|default_if_none:"?" }} SP · {{ item.get_item_type_display }}{% if item.subtask_total %} · <span class="subtask-progress" title="Erledigte Unteraufgaben">{{ item.subtask_done }}/{{ item.subtask_total }} Unteraufgaben</span>{% endif %}</span>
+        {% include "includes/avatar.html" with user=item.assignee small=True %}
+      </div>
+      {% if board_editable %}
+      <form class="move-form" method="post" action="{% url 'board:move' project.key %}">
+        {% csrf_token %}
+        <input type="hidden" name="item" value="{{ item.number }}">
+        <input type="hidden" name="version" value="{{ item.version }}">
+        <label class="visually-hidden" for="move-{{ item.number }}">Status von {{ item.key }}</label>
+        <select id="move-{{ item.number }}" class="form-select form-select-sm" name="status">
+          {% for value, label in status_choices %}<option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-sm btn-ghost" type="submit">Verschieben</button>
+      </form>
+      {% endif %}
+    </article>
+    {% endfor %}
+    <p class="board-empty" {% if column.items %}hidden{% endif %}>Keine Karten</p>
+  </div>
+  {% if can_quick_create and swimlane == "none" and column.status in quick_create_statuses %}
+  <form class="quick-create" data-quick-create method="post" action="{% url 'board:quick_create' project.key %}">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="{{ column.status }}">
+    <label class="visually-hidden" for="quick-{{ column.status }}">Neue Karte in {{ column.label }}</label>
+    <input id="quick-{{ column.status }}" class="form-control form-control-sm" name="title" maxlength="200" required placeholder="+ Neue Karte … (Enter)" autocomplete="off">
+    <label class="visually-hidden" for="quick-type-{{ column.status }}">Typ</label>
+    <select id="quick-type-{{ column.status }}" class="form-select form-select-sm" name="item_type">
+      {% for value, label in type_choices %}{% if value != 'epic' and value != 'subtask' %}<option value="{{ value }}">{{ label }}</option>{% endif %}{% endfor %}
+    </select>
+    <button class="btn btn-sm btn-accent visually-hidden-focusable" type="submit">Anlegen</button>
+  </form>
+  {% endif %}
+</section>

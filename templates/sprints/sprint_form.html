@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{% if sprint %}{{ sprint.label }} bearbeiten{% else %}Neuer Sprint{% endif %}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'sprints:list' project.key %}">{{ project.key }} Sprints</a> / <strong>{% if sprint %}{{ sprint.label }}{% else %}Neu{% endif %}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Sprints</div>
+    <h1>{% if sprint %}{{ sprint.label }} bearbeiten{% else %}Neuer Sprint{% endif %}</h1>
+    <p>Ein gemeinsames Sprint-Ziel gibt Orientierung. Maximale Dauer: ein Monat.</p>
+  </div>
+</div>
+<div class="ab-card" style="max-width:52rem">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-accent">Speichern</button>
+      <a class="btn btn-ghost" href="{% if sprint %}{% url 'sprints:detail' project.key sprint.number %}{% else %}{% url 'sprints:list' project.key %}{% endif %}">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% load l10n %}{% if burnup %}
+<details class="ab-card ab-collapsible {{ extra_class }}" open>
+  <summary><h2 id="burnup-heading">Burnup{% if burnup_title %} · {{ burnup_title }}{% endif %}</h2></summary>
+  <div class="small text-muted d-flex gap-3 justify-content-end mt-2">
+    <span><span class="chart-legend scope" aria-hidden="true"></span> Umfang</span>
+    <span><span class="chart-legend status-done" aria-hidden="true"></span> Erledigt</span>
+  </div>
+  {% localize off %}<svg class="chart burnup" viewBox="0 0 {{ burnup.width }} {{ burnup.height }}" role="img" aria-labelledby="burnup-heading">
+    {% for line in burnup.gridlines %}
+      <line class="grid{% if line.value == 0 %} axis{% endif %}" x1="{{ burnup.plot_left }}" y1="{{ line.y }}" x2="{{ burnup.plot_right }}" y2="{{ line.y }}"/>
+      <text class="label" x="{{ burnup.plot_left|add:'-8' }}" y="{{ line.y }}" dy="4" text-anchor="end">{{ line.value }}</text>
+    {% endfor %}
+    {% for tick in burnup.day_ticks %}{% if tick.labeled %}<text class="label" x="{{ tick.x }}" y="{{ burnup.label_y }}" text-anchor="{% if forloop.first %}start{% elif forloop.last %}end{% else %}middle{% endif %}">{{ tick.day|date:"d.m." }}</text>{% endif %}{% endfor %}
+    {% if burnup.scope_points %}<polyline class="scope" points="{{ burnup.scope_points }}"/>{% endif %}
+    {% if burnup.done_points %}<polyline class="done" pathLength="1" points="{{ burnup.done_points }}"/>{% endif %}
+  </svg>{% endlocalize %}
+  <details class="mt-2">
+    <summary class="small">Werte als Tabelle</summary>
+    <table class="table ab-table table-sm mt-2">
+      <thead><tr><th>Tag</th><th>Umfang</th><th>Erledigt</th></tr></thead>
+      <tbody>{% for row in burnup.rows %}<tr><td>{{ row.day|date:"D d.m." }}</td><td>{{ row.scope|default_if_none:"–" }}</td><td>{{ row.done|default_if_none:"–" }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </details>
+</details>
+{% endif %}

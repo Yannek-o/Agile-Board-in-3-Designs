@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}{{ sprint.label }} · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'sprints:list' project.key %}">{{ project.key }} Sprints</a> / <strong>{{ sprint.label }}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Sprints</div>
+    <h1>Sprintplanung · {{ sprint.label }}</h1>
+    <p>{{ sprint.start_date|date:"d.m." }} – {{ sprint.end_date|date:"d.m.Y" }} · Status: <span class="ab-badge {{ sprint.status|badge_class }}">{{ sprint.get_status_display }}</span></p>
+  </div>
+  <div class="actions">
+    {% if sprint.status == 'active' %}<a class="btn btn-ghost" href="{% url 'board:board' project.key %}">Zum Board</a>{% elif not sprint.is_open %}<a class="btn btn-ghost" href="{% url 'board:board' project.key %}?sprint={{ sprint.number }}">Board-Stand ansehen</a>{% endif %}
+    {% if access.can_manage_backlog and sprint.is_open %}
+      <a class="btn btn-ghost" href="{% url 'sprints:edit' project.key sprint.number %}">Bearbeiten</a>
+      {% if sprint.status == 'planned' %}
+        <form method="post" action="{% url 'sprints:start' project.key sprint.number %}">{% csrf_token %}<button class="btn btn-accent" type="submit">Sprint starten</button></form>
+      {% else %}
+        <button class="btn btn-accent" type="button" data-bs-toggle="modal" data-bs-target="#completeSprint">Sprint abschließen</button>
+      {% endif %}
+      <form method="post" action="{% url 'sprints:cancel' project.key sprint.number %}" onsubmit="return confirm('Sprint wirklich abbrechen? Alle offenen Einträge gehen zurück ins Product Backlog.');">{% csrf_token %}<button class="btn btn-metal-danger" type="submit">Sprint abbrechen</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="ab-goal mb-3 d-flex gap-4">
+  <span class="label">SPRINT-ZIEL</span>
+  <span>{{ sprint.goal|default:"Noch kein Sprint-Ziel festgelegt – vor dem Start erforderlich." }}</span>
+</div>
+{% if previous_retro %}
+<div class="ab-note mb-3">
+  <strong>Maßnahmen aus der Retrospektive von {{ previous_retro.label }}:</strong>
+  <div class="prose mt-1">{{ previous_retro.retro_actions|linebreaksbr }}</div>
+</div>
+{% endif %}
+
+{% if sprint.is_open %}
+<div class="row g-3">
+  <div class="col-lg-6">
+    <section class="ab-card h-100" aria-labelledby="pb-heading">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 id="pb-heading" class="mb-0">Product Backlog</h2>
+        <span class="ab-badge badge-neutral">{{ candidates|length }} verfügbar</span>
+      </div>
+      <form method="get" class="mb-3" role="search">
+        <label class="visually-hidden" for="candidate-search">Aufgaben suchen</label>
+        <input id="candidate-search" class="form-control" type="search" name="q" value="{{ search }}" placeholder="Aufgaben suchen …">
+      </form>
+      {% for item in candidates %}
+        <div class="plan-item">
+          <div class="grow">
+            <a class="item-key small" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.key }}</a>
+            <div>{{ item.title }}</div>
+          </div>
+          <span class="ab-badge {{ item.priority|badge_class }}">{{ item.get_priority_display }}</span>
+          <span class="ab-badge badge-warning">{{ item.story_points|default_if_none:"?" }} SP</span>
+          {% if access.can_manage_backlog %}
+          <form method="post" action="{% url 'sprints:add_item' project.key sprint.number %}">
+            {% csrf_token %}<input type="hidden" name="item" value="{{ item.number }}">
+            <button class="btn btn-sm btn-ghost" type="submit" aria-label="{{ item.key }} hinzufügen">+ Hinzufügen</button>
+          </form>
+          {% endif %}
+        </div>
+      {% empty %}<p class="text-muted mb-0">Keine einplanbaren Einträge.</p>{% endfor %}
+    </section>
+  </div>
+  <div class="col-lg-6">
+    <section class="ab-card h-100" aria-labelledby="sb-heading">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 id="sb-heading" class="mb-0">Sprint Backlog</h2>
+        <span class="ab-badge badge-success">{{ sprint_points }} Story Points · {{ done_count }}/{{ sprint_items|length }} erledigt</span>
+      </div>
+      {% if capacity %}
+        <div class="capacity-hint mb-3{% if capacity.over %} is-over{% endif %}" role="status">
+          {% if capacity.velocity is None %}
+            Noch keine abgeschlossenen Sprints – die Kapazität wird ab dem ersten Sprint-Abschluss angezeigt.
+          {% else %}
+            <strong>Geplant: {{ capacity.planned }} SP</strong> · Ø letzte {{ capacity.sprints }} Sprint{{ capacity.sprints|pluralize:"s" }}: {{ capacity.velocity|floatformat:"-1" }} SP
+            {% if capacity.over %}<span class="d-block small mt-1">Deutlich mehr als bisher geschafft – Umfang prüfen oder Einträge zurück ins Backlog legen.</span>{% endif %}
+          {% endif %}
+        </div>
+      {% endif %}
+      {% for item in sprint_items %}
+        <div class="plan-item">
+          <div class="grow">
+            <a class="item-key small" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.key }}</a>
+            <div>{{ item.title }}</div>
+          </div>
+          <span class="ab-badge {{ item.status|badge_class }}">{{ item|status_label }}</span>
+          <span class="ab-badge badge-warning">{{ item.story_points|default_if_none:"?" }} SP</span>
+          {% if access.can_manage_backlog %}
+          <form method="post" action="{% url 'sprints:remove_item' project.key sprint.number %}">
+            {% csrf_token %}<input type="hidden" name="item" value="{{ item.number }}">
+            <button class="btn btn-sm btn-metal-danger" type="submit" aria-label="{{ item.key }} entfernen">Entfernen</button>
+          </form>
+          {% endif %}
+        </div>
+      {% empty %}<p class="text-muted mb-0">Noch keine Einträge eingeplant.</p>{% endfor %}
+      <p class="text-muted small mt-3 mb-0">Auswahl und Sprint-Ziel können jederzeit angepasst werden, solange der Sprint offen ist.</p>
+    </section>
+  </div>
+</div>
+{% endif %}
+
+{% if not sprint.is_open %}
+<div class="ab-card mb-3">
+  <dl class="meta-list">
+    <dt>Abgeschlossen</dt><dd>{{ sprint.closed_at|date:"d.m.Y H:i" }}{% if sprint.completed_by %} · {{ sprint.completed_by }}{% endif %}</dd>
+    <dt>Story Points</dt><dd>{{ sprint.completed_points }} von {{ sprint.committed_points }} erledigt</dd>
+    {% if sprint.review_notes %}<dt>Abschlussnotiz</dt><dd class="prose">{{ sprint.review_notes }}</dd>{% endif %}
+  </dl>
+</div>
+{% endif %}
+
+{% if sprint.status == 'completed' %}
+<section class="ab-card mb-3" aria-labelledby="retro-heading">
+  <h2 id="retro-heading">Retrospektive</h2>
+  {% if access.can_manage_backlog %}
+  <form method="post" action="{% url 'sprints:retro' project.key sprint.number %}">
+    {% csrf_token %}
+    <div class="retro-grid">
+      {% for field in retro_form %}
+      <div class="{% cycle 'went-well' 'to-improve' 'actions' %}">
+        <h3><label for="{{ field.id_for_label }}">{{ field.label }}</label></h3>
+        <textarea id="{{ field.id_for_label }}" name="{{ field.html_name }}" class="form-control" rows="4">{{ field.value|default_if_none:"" }}</textarea>
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-accent mt-3">Retrospektive speichern</button>
+  </form>
+  {% elif sprint.retro_went_well or sprint.retro_to_improve or sprint.retro_actions %}
+  <div class="retro-grid">
+    <div class="went-well"><h3>Was lief gut?</h3><div class="prose">{{ sprint.retro_went_well|default:"–"|linebreaksbr }}</div></div>
+    <div class="to-improve"><h3>Was lief nicht gut?</h3><div class="prose">{{ sprint.retro_to_improve|default:"–"|linebreaksbr }}</div></div>
+    <div class="actions"><h3>Was ändern wir?</h3><div class="prose">{{ sprint.retro_actions|default:"–"|linebreaksbr }}</div></div>
+  </div>
+  {% else %}<p class="text-muted mb-0">Noch keine Retrospektive festgehalten.</p>{% endif %}
+</section>
+{% endif %}
+
+{% include "includes/burndown.html" with extra_class="mt-3" %}
+{% include "sprints/_report.html" with extra_class="mt-3" %}
+
+<details class="ab-card ab-collapsible mt-3">
+  <summary><h2 id="history-heading">Sprint-Historie <span class="text-muted fw-normal">({{ history|length }})</span></h2></summary>
+  <div class="table-responsive mt-3">
+    <table class="table ab-table">
+      <thead><tr><th>ID</th><th>Titel</th><th>Ergebnis</th><th>Status bei Abschluss</th><th>SP</th><th>Hinzugefügt</th></tr></thead>
+      <tbody>
+      {% for entry in history %}
+        <tr>
+          <td><a class="item-key" href="{% url 'backlog:detail' project.key entry.item.number %}">{{ entry.item.key }}</a></td>
+          <td>{{ entry.item.title }}</td>
+          <td>{{ entry.get_outcome_display }}</td>
+          <td>{{ entry.status_at_close_display|default:"–" }}</td>
+          <td>{{ entry.points_at_close|default_if_none:"–" }}</td>
+          <td>{{ entry.added_at|date:"d.m.Y" }}</td>
+        </tr>
+      {% empty %}<tr><td colspan="6" class="text-muted">Keine Einträge.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+{% if access.can_manage_backlog and sprint.status == 'active' %}
+<div class="modal fade" id="completeSprint" tabindex="-1" aria-labelledby="completeSprintTitle" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="{% url 'sprints:complete' project.key sprint.number %}">
+      {% csrf_token %}
+      <div class="modal-header"><h2 class="modal-title fs-5" id="completeSprintTitle">{{ sprint.label }} abschließen</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button></div>
+      <div class="modal-body">
+        <p>{{ done_count }} von {{ sprint_items|length }} Einträgen sind erledigt. Nicht erledigte Arbeit wird übernommen oder geht zurück ins Product Backlog; die Sprint-Historie bleibt erhalten.</p>
+        {% with form=complete_form %}{% include "includes/form_fields.html" %}{% endwith %}
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Abbrechen</button><button type="submit" class="btn btn-accent">Abschließen</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

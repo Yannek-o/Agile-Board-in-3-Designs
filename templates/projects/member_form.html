@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Mitglied · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:team' project.key %}">Team {{ project.key }}</a> / <strong>{% if membership %}{{ membership.user.display_name }}{% else %}Neues Mitglied{% endif %}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Verwaltung · {{ project.key }}</div>
+    <h1>{% if membership %}{{ membership.user.display_name }}{% else %}Mitarbeiter hinzufügen{% endif %}</h1>
+    <p>Scrum-Verantwortlichkeit und technische Rechte werden getrennt festgelegt.</p>
+  </div>
+</div>
+<div class="ab-card" style="max-width:52rem">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-accent">Speichern</button>
+      <a class="btn btn-ghost" href="{% url 'projects:team' project.key %}">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

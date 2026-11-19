@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}<strong>Dashboard</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Übersicht</div>
+    <h1>{% now "H" as hour %}{% if hour < "11" %}Guten Morgen{% elif hour < "18" %}Guten Tag{% else %}Guten Abend{% endif %}, {{ user.first_name|default:user.username }}</h1>
+    <p>Deine Projekte, Sprints und Aufgaben auf einen Blick</p>
+  </div>
+  <div class="actions"><a class="btn btn-accent" href="{% url 'core:go' 'backlog' %}">+ Neue Aufgabe</a></div>
+</div>
+<div class="row g-3 mb-3">
+  {% for tile in kpi_tiles %}
+  <div class="col-6 col-xl">
+    <button type="button" class="ab-tile tile-button kpi-tile{% if tile.signal %} signal-{{ tile.signal }}{% endif %} collapsed" data-bs-toggle="collapse" data-bs-target="#metric-{{ tile.key }}" aria-expanded="false" aria-controls="metric-{{ tile.key }}">
+      <span class="kpi-head">{% include "includes/kpi_icon.html" with name=tile.icon %}<span class="label">{{ tile.label }}</span></span>
+      <span class="value">{{ tile.value }}</span>
+      <span class="kpi-foot">
+        {% if tile.trend %}<span class="kpi-trend trend-{{ tile.trend.tone }}"><span class="kpi-delta">{{ tile.trend.display }}</span> seit {{ tile.trend.since|date:"d.m." }}</span>{% else %}<span class="kpi-trend trend-none">Verlauf folgt</span>{% endif %}
+        {% if tile.sparkline %}<svg class="kpi-sparkline" viewBox="0 0 100 28" aria-hidden="true"><polygon class="area" points="{{ tile.sparkline.area }}"/><polyline class="line" pathLength="1" points="{{ tile.sparkline.points }}"/><circle class="dot" cx="{{ tile.sparkline.last_x }}" cy="{{ tile.sparkline.last_y }}" r="2.6"/></svg>{% endif %}
+      </span>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+<div id="metric-panels">
+  <div class="collapse" id="metric-active_projects" data-bs-parent="#metric-panels">
+    <section class="ab-card mb-3" aria-label="Aktive Projekte">
+      <h2>Aktive Projekte</h2>
+      {% for project in metric_details.active_projects %}
+        <div class="ab-row-link"><span class="item-key small">{{ project.key }}</span><a class="flex-grow-1 text-reset stretched-link" href="{% url 'projects:detail' project.key %}">{{ project.name }}</a><span class="ab-badge {{ project.status|badge_class }}">{{ project.get_status_display }}</span></div>
+      {% empty %}<p class="text-muted mb-0">Keine aktiven Projekte.</p>{% endfor %}
+    </section>
+  </div>
+  <div class="collapse" id="metric-my_open_items" data-bs-parent="#metric-panels">
+    <section class="ab-card mb-3" aria-label="Meine offenen Aufgaben">
+      <h2>Meine offenen Aufgaben</h2>
+      {% include "reporting/_item_rows.html" with items=metric_details.my_open_items empty_text="Keine offenen Aufgaben zugewiesen." %}
+    </section>
+  </div>
+  <div class="collapse" id="metric-running_sprints" data-bs-parent="#metric-panels">
+    <section class="ab-card mb-3" aria-label="Laufende Sprints">
+      <h2>Laufende Sprints</h2>
+      {% for progress in active_sprints %}
+        <div class="ab-row-link"><span class="item-key small">{{ progress.sprint.project.key }}</span><a class="flex-grow-1 text-reset stretched-link" href="{% url 'board:board' progress.sprint.project.key %}">{{ progress.sprint.project.name }} · {{ progress.sprint.label }}</a><span class="text-muted small">{{ progress.done }} von {{ progress.total }} erledigt · {{ progress.percent }} %</span></div>
+      {% empty %}<p class="text-muted mb-0">Keine laufenden Sprints.</p>{% endfor %}
+    </section>
+  </div>
+  <div class="collapse" id="metric-sprint_done" data-bs-parent="#metric-panels">
+    <section class="ab-card mb-3" aria-label="Im Sprint erledigt">
+      <h2>Im Sprint erledigt</h2>
+      {% include "reporting/_item_rows.html" with items=metric_details.sprint_done empty_text="In laufenden Sprints ist noch nichts erledigt." %}
+    </section>
+  </div>
+  <div class="collapse" id="metric-high_priority_open" data-bs-parent="#metric-panels">
+    <section class="ab-card mb-3" aria-label="Hohe Priorität offen">
+      <h2>Hohe Priorität offen</h2>
+      {% include "reporting/_item_rows.html" with items=metric_details.high_priority_open empty_text="Keine offenen Aufgaben mit hoher Priorität." %}
+    </section>
+  </div>
+  <div class="collapse" id="metric-blocked_items" data-bs-parent="#metric-panels">
+    <section class="ab-card mb-3" aria-label="Blockiert">
+      <h2>Blockiert</h2>
+      {% include "reporting/_item_rows.html" with items=metric_details.blocked_items empty_text="Nichts blockiert." %}
+    </section>
+  </div>
+</div>
+<div class="row g-3 align-items-stretch">
+  <div class="col-lg-7 dashboard-side">
+    <section class="ab-card mb-3" aria-labelledby="next-heading">
+      <h2 id="next-heading">Meine nächsten Aufgaben</h2>
+      {% include "reporting/_item_rows.html" with items=my_next_items empty_text="Keine offenen Aufgaben zugewiesen." %}
+    </section>
+    <section class="ab-card" aria-labelledby="recent-heading">
+      <h2 id="recent-heading">Zuletzt geänderte Aufgaben</h2>
+      {% include "reporting/_item_rows.html" with items=recent_items show_updated=True empty_text="Noch keine Aufgaben." %}
+    </section>
+  </div>
+  <div class="col-lg-5 dashboard-side">
+    <section class="ab-card mb-3" aria-labelledby="sprints-heading">
+      <h2 id="sprints-heading">Aktive Sprints</h2>
+      {% for progress in active_sprints %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between"><a class="fw-bold text-reset" href="{% url 'board:board' progress.sprint.project.key %}">{{ progress.sprint.project.name }} · {{ progress.sprint.label }}</a><span class="text-muted small">{{ progress.percent }} %</span></div>
+          <div class="progress my-1" role="progressbar" aria-label="Fortschritt {{ progress.sprint }}" aria-valuenow="{{ progress.percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ progress.percent }}%"></div></div>
+          <div class="text-muted small">{{ progress.done }} von {{ progress.total }} erledigt</div>
+        </div>
+      {% empty %}<p class="text-muted mb-0">Keine laufenden Sprints.</p>{% endfor %}
+    </section>
+    <section class="ab-card" aria-labelledby="projects-heading">
+      <h2 id="projects-heading">Meine Projekte</h2>
+      {% for project in projects %}
+        <div class="d-flex justify-content-between py-1"><a href="{% url 'projects:detail' project.key %}">{{ project.name }}</a><span class="ab-badge {{ project.status|badge_class }}">{{ project.get_status_display }}</span></div>
+      {% empty %}<p class="text-muted mb-0">Noch keinem Projekt zugeordnet.</p>{% endfor %}
+    </section>
+    <form class="ab-card dashboard-notes" method="post" action="{% url 'reporting:dashboard_notes' %}" data-dashboard-notes>
+      {% csrf_token %}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="mb-0"><label for="dashboard-notes">Notizen</label></h2>
+        <span class="small text-muted" data-notes-status aria-live="polite"></span>
+      </div>
+      <textarea id="dashboard-notes" name="notes" class="form-control" maxlength="5000" placeholder="Persönliche Notizen – werden automatisch gespeichert …">{{ user.dashboard_notes }}</textarea>
+      <noscript><button type="submit" class="btn btn-accent btn-sm mt-2">Speichern</button></noscript>
+    </form>
+  </div>
+</div>
+{% endblock %}

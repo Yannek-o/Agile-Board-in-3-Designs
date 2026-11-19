@@ -1,0 +1,283 @@
+{% load agile %}
+<div class="detail-grid"{% if can_inline_edit %} data-inline-url="{% url 'backlog:inline_update' project.key item.number %}" data-version="{{ item.version }}"{% endif %}>
+  <div>
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+      <span class="item-key">{{ item.key }}</span>
+      <span class="ab-badge badge-neutral">{{ item.get_item_type_display }}</span>
+      <span class="ab-badge {{ item.status|badge_class }}">{{ item|status_label }}</span>
+      <span class="ab-badge {{ item.priority|badge_class }}">{{ item.get_priority_display }}</span>
+      {% if item.is_blocked %}<span class="ab-badge badge-blocked">Blockiert{% if item.blocked_reason %}: {{ item.blocked_reason }}{% endif %}</span>{% endif %}
+      {% if item.is_archived %}<span class="ab-badge badge-neutral">Archiviert</span>{% endif %}
+    </div>
+    {% if item.parent %}
+      <nav class="hierarchy-trail small mb-1" aria-label="Übergeordnet">
+        <span class="text-muted">Übergeordnet:</span>
+        {% if item.parent.parent %}<a href="{% url 'backlog:detail' project.key item.parent.parent.number %}" data-item-modal data-item-key="{{ item.parent.parent.key }}">{{ item.parent.parent.key }}</a> ›{% endif %}
+        <a href="{% url 'backlog:detail' project.key item.parent.number %}" data-item-modal data-item-key="{{ item.parent.key }}">{{ item.parent.key }} · {{ item.parent.title }}</a>
+      </nav>
+    {% endif %}
+    <h2 class="h4 fw-bold mb-3{% if can_inline_plan %} inline-editable{% endif %}"{% if can_inline_plan %} data-inline-field="title" data-inline-type="text" data-value="{{ item.title }}" tabindex="0" role="button" aria-label="Titel bearbeiten"{% endif %}><span class="inline-display">{{ item.title }}</span></h2>
+
+    {% if not item.is_subtask %}
+    <section class="ab-card mb-3" aria-labelledby="children-{{ item.pk }}">
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+        <h3 id="children-{{ item.pk }}" class="mb-0">Untergeordnete Einträge</h3>
+        {% if access.can_manage_backlog and not item.is_archived %}
+          <a class="btn btn-ghost btn-sm" href="{% url 'backlog:create' project.key %}?parent={{ item.number }}">+ {% if item.is_epic %}Story{% else %}Unteraufgabe{% endif %}</a>
+        {% endif %}
+      </div>
+      {% if child_progress.total %}
+        <div class="d-flex align-items-center gap-2 mb-2 small text-muted">
+          <div class="progress flex-grow-1" role="progressbar" aria-label="Fortschritt untergeordneter Einträge" aria-valuenow="{{ child_progress.percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ child_progress.percent }}%"></div></div>
+          <span>{{ child_progress.done }}/{{ child_progress.total }} erledigt</span>
+        </div>
+        {% for child in children %}
+          <div class="child-row">
+            <a class="item-key small" href="{% url 'backlog:detail' project.key child.number %}" data-item-modal data-item-key="{{ child.key }}">{{ child.key }}</a>
+            <span class="flex-grow-1 text-truncate">{{ child.title }}</span>
+            <span class="ab-badge badge-neutral">{{ child.get_item_type_display }}</span>
+            <span class="ab-badge {{ child.status|badge_class }}">{{ child|status_label }}</span>
+            {% include "includes/avatar.html" with user=child.assignee small=True %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted mb-0">{% if item.is_epic %}Noch keine Stories in diesem Epic.{% else %}Keine Unteraufgaben.{% endif %}</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="ab-card mb-3" aria-labelledby="desc-{{ item.pk }}">
+      <h3 id="desc-{{ item.pk }}">Beschreibung</h3>
+      <div class="markdown-body{% if can_inline_edit %} inline-editable{% endif %}"{% if can_inline_edit %} data-inline-field="description" data-inline-type="textarea" data-value="{{ item.description }}" tabindex="0" role="button" aria-label="Beschreibung bearbeiten"{% endif %}><div class="inline-display">{% if item.description %}{{ item.description|markdown }}{% else %}Keine Beschreibung.{% endif %}</div></div>
+      {% if can_inline_edit %}<p class="markdown-hint">Markdown: **fett**, *kursiv*, `Code`, - Liste, - [ ] Aufgabe, [Link](https://…)</p>{% endif %}
+    </section>
+
+    <section class="ab-card mb-3" aria-labelledby="links-{{ item.pk }}">
+      <h3 id="links-{{ item.pk }}">Verknüpfungen</h3>
+      {% for entry in links %}
+        <div class="child-row">
+          <span class="link-label">{{ entry.label }}</span>
+          <a class="item-key small" href="{% url 'backlog:detail' project.key entry.item.number %}" data-item-modal data-item-key="{{ entry.item.key }}">{{ entry.item.key }}</a>
+          <span class="flex-grow-1 text-truncate">{{ entry.item.title }}</span>
+          <span class="ab-badge {{ entry.item.status|badge_class }}">{{ entry.item|status_label }}</span>
+          {% if access.can_change_status %}
+          <form method="post" action="{% url 'backlog:link_delete' project.key item.number entry.link.pk %}">
+            {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" class="btn-link-plain text-danger small" aria-label="Verknüpfung mit {{ entry.item.key }} entfernen">Entfernen</button>
+          </form>
+          {% endif %}
+        </div>
+      {% empty %}<p class="text-muted">Keine Verknüpfungen.</p>{% endfor %}
+      {% if access.can_change_status and not item.is_archived %}
+      <form method="post" action="{% url 'backlog:link_add' project.key item.number %}" class="d-flex flex-wrap gap-2 mt-2">
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <label class="visually-hidden" for="link-type-{{ item.pk }}">Art der Verknüpfung</label>
+        <select id="link-type-{{ item.pk }}" class="form-select w-auto" name="link_type">{% for value, label in link_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+        <label class="visually-hidden" for="link-target-{{ item.pk }}">Eintrag</label>
+        <input id="link-target-{{ item.pk }}" class="form-control flex-grow-1" style="min-width: 8rem" name="target" required placeholder="{{ project.key }}-12">
+        <button class="btn btn-ghost" type="submit">Verknüpfen</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="ab-card mb-3" aria-labelledby="ac-{{ item.pk }}">
+      <h3 id="ac-{{ item.pk }}">Akzeptanzkriterien</h3>
+      {% for criterion in criteria %}
+        <div class="d-flex align-items-center gap-2 mb-2">
+          {% if access.can_change_status %}
+          <form method="post" action="{% url 'backlog:criterion_toggle' project.key item.number criterion.pk %}">
+            {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" class="btn btn-sm {% if criterion.is_met %}btn-accent{% else %}btn-ghost{% endif %}" aria-pressed="{{ criterion.is_met|yesno:'true,false' }}" aria-label="Kriterium {% if criterion.is_met %}als offen{% else %}als erfüllt{% endif %} markieren">{% if criterion.is_met %}✓{% else %}○{% endif %}</button>
+          </form>
+          {% else %}<span aria-hidden="true">{% if criterion.is_met %}✓{% else %}○{% endif %}</span>{% endif %}
+          <span class="flex-grow-1 {% if criterion.is_met %}text-muted text-decoration-line-through{% endif %}">{{ criterion.text }}</span>
+          {% if access.can_manage_backlog %}
+          <form method="post" action="{% url 'backlog:criterion_delete' project.key item.number criterion.pk %}">
+            {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" class="btn-link-plain text-danger small" aria-label="Kriterium löschen">Entfernen</button>
+          </form>
+          {% endif %}
+        </div>
+      {% empty %}<p class="text-muted">Noch keine Akzeptanzkriterien.</p>{% endfor %}
+      {% if access.can_manage_backlog %}
+      <form method="post" action="{% url 'backlog:criterion_add' project.key item.number %}" class="d-flex gap-2 mt-2">
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <label class="visually-hidden" for="new-criterion-{{ item.pk }}">Neues Kriterium</label>
+        <input id="new-criterion-{{ item.pk }}" class="form-control" name="text" maxlength="500" required placeholder="Neues Kriterium …">
+        <button class="btn btn-ghost" type="submit">Hinzufügen</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="ab-card mb-3" aria-labelledby="comments-{{ item.pk }}">
+      <h3 id="comments-{{ item.pk }}">Kommentare ({{ comments|length }})</h3>
+      {% for comment in comments %}
+        <div class="comment">
+          <div class="d-flex align-items-center gap-2 mb-1">{% include "includes/avatar.html" with user=comment.author small=True %}<strong>{{ comment.author|default:"Gelöschter Benutzer" }}</strong><span class="text-muted small">{{ comment.created_at|date:"d.m.Y H:i" }}</span></div>
+          <div class="markdown-body">{{ comment.body|markdown_mentions }}</div>
+        </div>
+      {% empty %}<p class="text-muted">Noch keine Kommentare.</p>{% endfor %}
+      {% if access.can_comment %}
+      <form method="post" action="{% url 'backlog:comment' project.key item.number %}">
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <label class="form-label" for="comment-{{ item.pk }}">Kommentar schreiben</label>
+        <textarea id="comment-{{ item.pk }}" class="form-control mb-2" name="body" rows="3" maxlength="5000" required placeholder="Kommentar … mit @name jemanden erwähnen" data-mention-users="{% for user in mention_users %}{{ user.username }}|{{ user.name }}{% if not forloop.last %};{% endif %}{% endfor %}"></textarea>
+        <button class="btn btn-accent btn-sm" type="submit">Kommentieren</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="ab-card" aria-labelledby="history-{{ item.pk }}">
+      <h3 id="history-{{ item.pk }}">Änderungsverlauf</h3>
+      {% for event in history %}
+        <div class="history-entry">
+          <strong>{{ event.actor|default:"System" }}</strong> · {{ event.get_action_display }}
+          {% if event.field %}<span class="text-muted">({{ event.field }})</span>: {{ event.old_value|default:"–" }} → {{ event.new_value|default:"–" }}{% elif event.message %} – {{ event.message }}{% endif %}
+          <div class="text-muted small">{{ event.created_at|date:"d.m.Y H:i" }}</div>
+        </div>
+      {% empty %}<p class="text-muted mb-0">Keine Einträge.</p>{% endfor %}
+    </section>
+  </div>
+
+  <aside>
+    <form method="post" action="{% url 'backlog:watch' project.key item.number %}" class="mb-3">
+      {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+      <button type="submit" class="btn btn-ghost w-100 watch-button{% if is_watching %} is-watching{% endif %}" aria-pressed="{{ is_watching|yesno:'true,false' }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>{% if is_watching %}Beobachtet{% else %}Beobachten{% endif %}</span>
+        <span class="watch-count" title="Anzahl Beobachter">{{ watcher_count }}</span>
+      </button>
+    </form>
+    <div class="ab-card mb-3">
+      <dl class="meta-list">
+        <dt>Bearbeiter</dt><dd{% if can_inline_edit %} class="inline-editable" data-inline-field="assignee" data-inline-type="select" data-value="{{ item.assignee_id|default_if_none:'' }}" tabindex="0" role="button" aria-label="Bearbeiter ändern"{% endif %}><span class="inline-display">{% if item.assignee %}{{ item.assignee.display_name }}{% else %}–{% endif %}</span>{% if can_inline_edit %}<template><option value="">– nicht zugewiesen –</option>{% for membership in members %}<option value="{{ membership.user.pk }}">{{ membership.user.display_name }}</option>{% endfor %}</template>{% endif %}</dd>
+        <dt>Priorität</dt><dd{% if can_inline_plan %} class="inline-editable" data-inline-field="priority" data-inline-type="select" data-value="{{ item.priority }}" tabindex="0" role="button" aria-label="Priorität ändern"{% endif %}><span class="inline-display">{{ item.get_priority_display }}</span>{% if can_inline_plan %}<template>{% for value, label in priority_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</template>{% endif %}</dd>
+        {% if item.epic %}<dt>Epic</dt><dd><a href="{% url 'backlog:detail' project.key item.epic.number %}" data-item-modal data-item-key="{{ item.epic.key }}">{{ item.epic.title }}</a></dd>{% endif %}
+        <dt>Story Points</dt><dd{% if can_inline_plan %} class="inline-editable" data-inline-field="story_points" data-inline-type="number" data-value="{{ item.story_points|default_if_none:'' }}" tabindex="0" role="button" aria-label="Story Points ändern"{% endif %}><span class="inline-display">{{ item.story_points|default_if_none:"–" }}</span></dd>
+        {% if access.can_manage_backlog and item.item_type != 'epic' and not item.archived_at %}<dt>Schätzen</dt><dd><form method="post" action="{% url 'poker:start' project.key %}">{% csrf_token %}<input type="hidden" name="item" value="{{ item.number }}"><button type="submit" class="btn-link-plain">🃏 Planning Poker</button></form></dd>{% endif %}
+        <dt>Labels</dt><dd>{% for label in item.labels.all %}<span class="ab-badge me-1" style="background: {{ label.color }}33; color: {{ label.color }}">{{ label.name }}</span>{% empty %}–{% endfor %}</dd>
+        <dt>Release</dt><dd>{% if item.fix_version %}<a href="{% url 'backlog:list' project.key %}?release={{ item.fix_version.pk }}">{{ item.fix_version.name }}</a>{% else %}–{% endif %}</dd>
+        <dt>Fällig</dt><dd{% if can_inline_plan %} class="inline-editable" data-inline-field="due_date" data-inline-type="date" data-value="{{ item.due_date|date:'Y-m-d' }}" tabindex="0" role="button" aria-label="Fälligkeit ändern"{% endif %}><span class="inline-display">{{ item.due_date|date:"d.m.Y"|default:"–" }}</span></dd>
+        <dt>Erstellt</dt><dd>{{ item.created_at|date:"d.m.Y H:i" }}{% if item.created_by %} · {{ item.created_by }}{% endif %}</dd>
+        <dt>Geändert</dt><dd>{{ item.updated_at|date:"d.m.Y H:i" }}</dd>
+        {% if item.completed_at %}<dt>Erledigt</dt><dd>{{ item.completed_at|date:"d.m.Y H:i" }}</dd>{% endif %}
+      </dl>
+    </div>
+    {% if access.can_change_status and not item.is_archived %}
+    <div class="ab-card mb-3">
+      <h3>Status ändern</h3>
+      <form method="post" action="{% url 'backlog:status' project.key item.number %}" class="d-flex gap-2">
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <input type="hidden" name="version" value="{{ item.version }}">
+        <label class="visually-hidden" for="status-{{ item.pk }}">Status</label>
+        <select id="status-{{ item.pk }}" class="form-select" name="status">{% for value, label in status_choices %}<option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <button class="btn btn-accent" type="submit">Setzen</button>
+      </form>
+      {% if project.definition_of_done %}<details class="mt-3"><summary class="small">Definition of Done</summary><div class="prose small text-muted mt-2">{{ project.definition_of_done }}</div></details>{% endif %}
+    </div>
+    {% endif %}
+    <div class="ab-card mb-3">
+      <h3>Sprint-Historie</h3>
+      {% for entry in sprint_history %}
+        <div class="small mb-1"><a href="{% url 'sprints:detail' project.key entry.sprint.number %}">{{ entry.sprint.label }}</a> · {{ entry.get_outcome_display }}</div>
+      {% empty %}<p class="text-muted small mb-0">Noch keinem Sprint zugeordnet.</p>{% endfor %}
+    </div>
+    <section class="ab-card mb-3 time-tracking" aria-labelledby="time-{{ item.pk }}">
+      <h3 id="time-{{ item.pk }}">Zeiterfassung</h3>
+      {% with progress=item.time_progress %}
+      <div class="time-bar{% if progress.over_estimate %} over{% endif %}" role="img" aria-label="Gebucht {{ item.time_spent|duration }}, verbleibend {{ item.remaining_estimate|duration }}">
+        <span class="time-spent" style="width: {{ progress.spent_percent }}%"></span>
+        <span class="time-remaining" style="width: {{ progress.remaining_percent }}%"></span>
+      </div>
+      {% endwith %}
+      <dl class="time-figures">
+        <div><dt>Schätzung</dt><dd>{{ item.original_estimate|duration }}</dd></div>
+        <div><dt>Gebucht</dt><dd>{{ item.time_spent|duration }}</dd></div>
+        <div><dt>Verbleibend</dt><dd>{{ item.remaining_estimate|duration }}</dd></div>
+      </dl>
+      {% if access.can_change_status and not item.is_archived %}
+      <details class="mt-2">
+        <summary class="small">Zeit buchen</summary>
+        <form method="post" action="{% url 'backlog:log_work' project.key item.number %}" class="work-log-form mt-2">
+          {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+          <div class="d-flex gap-2">
+            <label class="visually-hidden" for="duration-{{ item.pk }}">Dauer</label>
+            <input id="duration-{{ item.pk }}" class="form-control" name="duration" required placeholder="z. B. 1h 30m" maxlength="30">
+            <label class="visually-hidden" for="work-date-{{ item.pk }}">Datum</label>
+            <input id="work-date-{{ item.pk }}" class="form-control" type="date" name="work_date" value="{{ work_log_form.work_date.value }}" required>
+          </div>
+          <label class="visually-hidden" for="work-comment-{{ item.pk }}">Notiz</label>
+          <input id="work-comment-{{ item.pk }}" class="form-control mt-2" name="comment" maxlength="500" placeholder="Notiz (optional)">
+          <label class="visually-hidden" for="work-remaining-{{ item.pk }}">Restaufwand neu</label>
+          <input id="work-remaining-{{ item.pk }}" class="form-control mt-2" name="remaining" maxlength="30" placeholder="Restaufwand neu (leer = automatisch)">
+          <button class="btn btn-accent btn-sm mt-2" type="submit">Buchen</button>
+        </form>
+      </details>
+      {% endif %}
+      {% for log in work_logs %}
+        <div class="work-log-row">
+          {% include "includes/avatar.html" with user=log.user small=True %}
+          <div class="min-w-0 flex-grow-1"><strong>{{ log.minutes|duration }}</strong> <span class="text-muted small">· {{ log.work_date|date:"d.m.Y" }}{% if log.user %} · {{ log.user.display_name }}{% endif %}</span>{% if log.comment %}<div class="small text-muted text-truncate">{{ log.comment }}</div>{% endif %}</div>
+          {% if log.user_id == request.user.pk or access.can_manage_backlog %}
+          <form method="post" action="{% url 'backlog:delete_work_log' project.key item.number log.pk %}">
+            {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" class="btn btn-sm btn-danger-soft" aria-label="Buchung löschen">×</button>
+          </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </section>
+    <section class="ab-card mb-3" aria-labelledby="files-{{ item.pk }}">
+      <h3 id="files-{{ item.pk }}">Anhänge</h3>
+      {% for attachment in attachments %}
+        <div class="attachment-row">
+          {% url 'backlog:attachment_download' project.key item.number attachment.pk as download_url %}
+          {% if attachment.is_image %}<a class="attachment-thumb" href="{{ download_url }}" aria-hidden="true" tabindex="-1"><img src="{{ download_url }}" alt="" loading="lazy"></a>{% else %}<span class="attachment-icon" aria-hidden="true">📄</span>{% endif %}
+          <div class="min-w-0"><a href="{{ download_url }}">{{ attachment.original_name }}</a><div class="text-muted small">{{ attachment.size|filesizeformat }} · {{ attachment.uploaded_by|default:"–" }} · {{ attachment.created_at|date:"d.m.Y" }}</div></div>
+        </div>
+      {% empty %}<p class="text-muted">Keine Anhänge.</p>{% endfor %}
+      {% if access.can_comment %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'backlog:attachment_upload' project.key item.number %}" class="d-flex flex-wrap gap-2 mt-2">
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <label class="visually-hidden" for="file-{{ item.pk }}">Datei</label>
+        <input id="file-{{ item.pk }}" class="form-control" type="file" name="file" required>
+        <button class="btn btn-ghost" type="submit">Hochladen</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="ab-card mb-3" aria-labelledby="weblinks-{{ item.pk }}">
+      <h3 id="weblinks-{{ item.pk }}">Links</h3>
+      {% for link in web_links %}
+        <div class="web-link-row">
+          <a class="text-truncate" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.url }}</a>
+          {% if access.can_change_status %}
+          <form method="post" action="{% url 'backlog:web_link_delete' project.key item.number link.pk %}" class="ms-auto">
+            {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" class="btn btn-sm btn-danger-soft" aria-label="Link entfernen">×</button>
+          </form>
+          {% endif %}
+        </div>
+      {% empty %}<p class="text-muted">Keine Links.</p>{% endfor %}
+      {% if access.can_comment %}
+      <form method="post" action="{% url 'backlog:web_link_add' project.key item.number %}" class="d-flex flex-wrap gap-2 mt-2">
+        {% csrf_token %}{% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <label class="visually-hidden" for="new-weblink-{{ item.pk }}">Neuer Link</label>
+        <input id="new-weblink-{{ item.pk }}" class="form-control" type="url" name="url" maxlength="2000" required placeholder="https://…">
+        <button class="btn btn-ghost" type="submit">Hinzufügen</button>
+      </form>
+      {% endif %}
+    </section>
+    <div class="d-flex flex-wrap gap-2">
+      {% if access.can_change_status and not item.is_archived %}<a class="btn btn-ghost" href="{% url 'backlog:edit' project.key item.number %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">Bearbeiten</a>{% endif %}
+      <a class="btn btn-ghost" href="{% url 'backlog:detail' project.key item.number %}">Vollansicht</a>
+      {% if access.can_manage_backlog %}
+        {% if item.is_archived %}
+          <form method="post" action="{% url 'backlog:restore' project.key item.number %}">{% csrf_token %}<button class="btn btn-ghost" type="submit">Wiederherstellen</button></form>
+        {% else %}
+          <form method="post" action="{% url 'backlog:archive' project.key item.number %}" onsubmit="return confirm('Eintrag archivieren?');">{% csrf_token %}<button class="btn btn-danger-soft" type="submit">Archivieren</button></form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </aside>
+</div>

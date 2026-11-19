@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}Projekte{% endblock %}
+{% block breadcrumb %}<strong>Projekte</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Projektmanagement</div>
+    <h1>Alle Softwareprojekte</h1>
+    <p>Projekte verwalten, Fortschritt verfolgen und Teams zuordnen</p>
+  </div>
+  {% if user.may_create_projects %}
+  <div class="actions"><a class="btn btn-accent" href="{% url 'projects:create' %}">+ Neues Projekt</a></div>
+  {% endif %}
+</div>
+{% if section %}
+  <div class="ab-note mb-3">Bitte zuerst ein Projekt auswählen.</div>
+{% endif %}
+<form class="ab-filterbar" method="get" role="search">
+  {% if section %}<input type="hidden" name="section" value="{{ section }}">{% endif %}
+  <label class="visually-hidden" for="project-search">Projekt suchen</label>
+  <input id="project-search" class="form-control search" type="search" name="q" value="{{ search }}" placeholder="Projekt suchen …">
+  <label class="visually-hidden" for="project-status">Status</label>
+  <select id="project-status" class="form-select" name="status" onchange="this.form.submit()">
+    <option value="">Status: Alle</option>
+    {% for value, label in status_choices %}
+      <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+    <option value="archived" {% if current_status == 'archived' %}selected{% endif %}>Archiviert</option>
+  </select>
+  <button class="btn btn-ghost" type="submit">Filtern</button>
+</form>
+<div class="row g-3 mb-4">
+  {% for project in projects %}
+    <div class="col-md-6 col-xl-4">
+      <a class="ab-card project-card{% if project.is_delayed %} overdue{% endif %}" href="{% if section == 'backlog' %}{% url 'backlog:list' project.key %}{% elif section == 'sprints' %}{% url 'sprints:list' project.key %}{% elif section == 'board' %}{% url 'board:board' project.key %}{% elif section == 'team' %}{% url 'projects:team' project.key %}{% elif section == 'reports' %}{% url 'reporting:project_report' project.key %}{% else %}{% url 'projects:detail' project.key %}{% endif %}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="key">{{ project.key }}</span>
+          {% if project.is_archived %}<span class="ab-badge badge-neutral">Archiviert</span>{% else %}<span class="ab-badge {{ project.status|badge_class }}">{{ project.get_status_display }}</span>{% endif %}
+        </div>
+        <h2 class="h5 fw-bold">{{ project.name }}</h2>
+        <p class="text-muted small">{{ project.description|truncatechars:120|default:"Keine Beschreibung" }}</p>
+        {% if project.is_delayed %}<p class="mb-2"><span class="ab-badge badge-overdue">In Verzug{% if project.overdue_items %} · {{ project.overdue_items }} überfällig{% endif %}{% if project.has_overdue_sprint %} · Sprint überfällig{% endif %}</span></p>{% endif %}
+        <div class="footer">
+          <span>{{ project.open_items }} offene Aufgabe{{ project.open_items|pluralize:"n" }}</span>
+          <span class="d-flex gap-1">
+            {% for membership in project.memberships.all %}{% if membership.is_active and forloop.counter <= 4 %}{% include "includes/avatar.html" with user=membership.user small=True %}{% endif %}{% endfor %}
+          </span>
+        </div>
+      </a>
+    </div>
+  {% empty %}
+    <div class="col-12"><div class="ab-card text-muted">Keine Projekte gefunden.</div></div>
+  {% endfor %}
+</div>
+<div class="ab-card">
+  <h2>Projektstatus auf einen Blick</h2>
+  <div class="row">
+    {% for value, label in status_choices %}
+      <div class="col-6 col-md-3"><div class="text-muted small">{{ label }}</div><div class="fs-3 fw-bold">{{ status_counts|get_item:value|default:0 }}</div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

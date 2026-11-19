@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Berichte · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Berichte</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Auswertungen</div>
+    <h1>Berichte</h1>
+    <p>Fortschritt, Velocity und Arbeitsverteilung</p>
+  </div>
+  <div class="actions"><a class="btn btn-ghost" href="{% url 'activity:list' project.key %}">Änderungsprotokoll</a></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">Aktive Einträge</div><div class="value">{{ item_total }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">Blockiert</div><div class="value">{{ blocked_count }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">Velocity (Ø letzte 3 Sprints)</div><div class="value">{% if velocity is not None %}{{ velocity }} SP{% else %}–{% endif %}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">Aktiver Sprint</div><div class="value">{% if active_progress %}{{ active_progress.percent }} %{% else %}–{% endif %}</div></div></div>
+</div>
+{% include "includes/burndown.html" with extra_class="mb-3" burndown_title=burndown_sprint.label %}
+{% include "includes/burnup.html" with extra_class="mb-3" burnup_title=burndown_sprint.label %}
+<div class="row g-3 mb-3">
+  {% if velocity_data %}<div class="col-xl-6">{% include "includes/velocity_chart.html" with extra_class="h-100" %}</div>{% endif %}
+  <div class="{% if velocity_data %}col-xl-6{% else %}col-12{% endif %}">{% include "includes/cfd.html" with extra_class="h-100" %}</div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-6">
+    <section class="ab-card h-100" aria-labelledby="status-heading">
+      <h2 id="status-heading">Status-Verteilung</h2>
+      {% for row in status_rows %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small"><span>{{ row.label }}</span><span>{{ row.count }}</span></div>
+          <div class="progress" role="progressbar" aria-label="{{ row.label }}" aria-valuenow="{{ row.percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ row.percent }}%"></div></div>
+        </div>
+      {% endfor %}
+      <h3 class="mt-4">Typen</h3>
+      <div class="d-flex flex-wrap gap-2">{% for row in type_rows %}<span class="ab-badge badge-neutral">{{ row.label }}: {{ row.count }}</span>{% endfor %}</div>
+    </section>
+  </div>
+  <div class="col-lg-6">
+    <section class="ab-card h-100" aria-labelledby="workload-heading">
+      <h2 id="workload-heading">Offene Arbeit je Person</h2>
+      {% for row in workload %}
+        <div class="d-flex justify-content-between py-1"><span>{% if row.assignee__username %}{% firstof row.assignee__first_name row.assignee__username %} {{ row.assignee__last_name }}{% else %}Nicht zugewiesen{% endif %}</span><span class="ab-badge badge-neutral">{{ row.count }}</span></div>
+      {% empty %}<p class="text-muted mb-0">Keine offene Arbeit.</p>{% endfor %}
+    </section>
+  </div>
+</div>
+<section class="ab-card mt-3" aria-labelledby="sprint-history-heading">
+  <h2 id="sprint-history-heading">Abgeschlossene Sprints</h2>
+  <div class="table-responsive">
+    <table class="table ab-table">
+      <thead><tr><th>Sprint</th><th>Zeitraum</th><th>Einträge erledigt</th><th>SP geplant</th><th>SP erledigt</th><th>Quote</th></tr></thead>
+      <tbody>
+      {% for row in sprint_rows %}
+        <tr>
+          <td><a href="{% url 'sprints:detail' project.key row.sprint.number %}">{{ row.sprint.label }}</a></td>
+          <td>{{ row.sprint.start_date|date:"d.m." }} – {{ row.sprint.end_date|date:"d.m.Y" }}</td>
+          <td>{{ row.items_done }} / {{ row.items }}</td>
+          <td>{{ row.committed }}</td>
+          <td>{{ row.completed }}</td>
+          <td>{{ row.percent }} %</td>
+        </tr>
+      {% empty %}<tr><td colspan="6" class="text-muted">Noch keine abgeschlossenen Sprints.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

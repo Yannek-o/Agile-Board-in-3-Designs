@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Mitarbeiterkonten{% endblock %}
+{% block breadcrumb %}<strong>Mitarbeiterkonten</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Administration</div>
+    <h1>Mitarbeiterkonten</h1>
+    <p>Interne Konten anlegen, bearbeiten, aktivieren und deaktivieren</p>
+  </div>
+  <div class="actions"><a class="btn btn-accent" href="{% url 'accounts:user_create' %}">+ Mitarbeiter</a></div>
+</div>
+<form class="ab-filterbar" method="get" role="search">
+  <label class="visually-hidden" for="user-search">Suchen</label>
+  <input id="user-search" class="form-control search" type="search" name="q" value="{{ request.GET.q }}" placeholder="Name, Benutzername oder E-Mail …">
+  <button class="btn btn-ghost" type="submit">Suchen</button>
+</form>
+<div class="ab-table-wrap">
+  <table class="table ab-table table-hover">
+    <thead><tr><th>Mitarbeiter</th><th>E-Mail</th><th>Funktion</th><th>Rechte</th><th>Projekte</th><th>Status</th><th><span class="visually-hidden">Aktionen</span></th></tr></thead>
+    <tbody>
+    {% for employee in employees %}
+      <tr>
+        <td><div class="d-flex align-items-center gap-2">{% include "includes/avatar.html" with user=employee small=True %}<div>{{ employee.display_name }}<div class="text-muted small">{{ employee.username }}</div></div></div></td>
+        <td>{{ employee.email|default:"–" }}</td>
+        <td>{{ employee.job_title|default:"–" }}</td>
+        <td>
+          {% if employee.is_system_admin %}<span class="ab-badge badge-warning">Systemadministration</span>{% endif %}
+          {% if employee.can_create_projects %}<span class="ab-badge badge-info">Projekte anlegen</span>{% endif %}
+        </td>
+        <td>{{ employee.project_count }}</td>
+        <td>{% if not employee.is_active %}<span class="ab-badge badge-danger">Deaktiviert</span>{% elif not employee.has_usable_password %}<span class="ab-badge badge-warning" title="Die Person hat noch kein Passwort festgelegt">Einladung offen</span>{% else %}<span class="ab-badge badge-success">Aktiv</span>{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <a class="btn btn-sm btn-ghost" href="{% url 'accounts:user_edit' employee.pk %}">Bearbeiten</a>
+          {% if employee.is_active and not employee.has_usable_password %}
+          <form class="d-inline" method="post" action="{% url 'accounts:user_resend_invitation' employee.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-ghost" type="submit">Einladung erneut senden</button>
+          </form>
+          {% endif %}
+          {% if employee != user %}
+          <form class="d-inline" method="post" action="{% url 'accounts:user_toggle_active' employee.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-sm {% if employee.is_active %}btn-metal-danger{% else %}btn-ghost{% endif %}" type="submit">{% if employee.is_active %}Deaktivieren{% else %}Aktivieren{% endif %}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-muted">Keine Konten gefunden.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

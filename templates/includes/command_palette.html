@@ -1,0 +1,44 @@
+<div class="ab-palette" id="command-palette" role="dialog" aria-modal="true" aria-labelledby="palette-title" hidden>
+  <div class="ab-palette-panel">
+    <h2 id="palette-title" class="visually-hidden">Schnellsuche und Befehle</h2>
+    <div class="ab-palette-search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" autocomplete="off" spellcheck="false" placeholder="Eintrag (z. B. HELP-12) oder Befehl suchen …" aria-label="Suchbegriff" aria-controls="palette-results" data-palette-input>
+      <kbd>Esc</kbd>
+    </div>
+    <ul class="ab-palette-results" id="palette-results" role="listbox" aria-label="Ergebnisse" data-palette-results></ul>
+    <div class="ab-palette-footer"><span><kbd>↑</kbd><kbd>↓</kbd> wählen</span><span><kbd>Enter</kbd> öffnen</span><span><kbd>?</kbd> alle Tastenkürzel</span></div>
+  </div>
+</div>
+<template id="palette-commands">
+  <a data-command data-go="d" href="{% url 'reporting:dashboard' %}" data-keywords="start home übersicht">Dashboard öffnen</a>
+  <a data-command data-go="p" href="{% url 'projects:list' %}" data-keywords="projekte">Projekte</a>
+  <a data-command data-go="l" href="{% url 'core:go' 'backlog' %}" data-keywords="backlog liste planung">Product Backlog</a>
+  <a data-command data-go="b" href="{% url 'core:go' 'board' %}" data-keywords="board kanban scrum">Agile Board</a>
+  <a data-command data-go="s" href="{% url 'core:go' 'sprints' %}" data-keywords="sprints planung">Sprints</a>
+  <a data-command data-go="r" href="{% url 'core:go' 'reports' %}" data-keywords="berichte burndown velocity report">Berichte</a>
+  <a data-command data-go="t" href="{% url 'core:go' 'team' %}" data-keywords="team mitglieder">Team</a>
+  {% if nav_current_project %}<a data-command data-create href="{% url 'backlog:create' nav_current_project.key %}" data-keywords="neu erstellen anlegen create">Neuer Eintrag in {{ nav_current_project.key }}</a>{% endif %}
+  <a data-command href="{% url 'notifications:list' %}" data-keywords="benachrichtigungen inbox">Benachrichtigungen</a>
+  <a data-command href="{% url 'accounts:profile' %}" data-keywords="profil konto passwort api token">Mein Profil</a>
+  <a data-command href="{% url 'core:search' %}" data-keywords="suche erweitert volltext">Erweiterte Suche</a>
+</template>
+<div class="ab-palette" id="shortcut-help" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" hidden>
+  <div class="ab-palette-panel ab-shortcut-panel">
+    <h2 id="shortcut-title">Tastenkürzel</h2>
+    <dl class="ab-shortcuts">
+      <dt><kbd>Strg</kbd>+<kbd>K</kbd> oder <kbd>/</kbd></dt><dd>Schnellsuche &amp; Befehle</dd>
+      <dt><kbd>c</kbd></dt><dd>Neuen Eintrag anlegen</dd>
+      <dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Dashboard</dd>
+      <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>Projekte</dd>
+      <dt><kbd>g</kbd> <kbd>l</kbd></dt><dd>Product Backlog</dd>
+      <dt><kbd>g</kbd> <kbd>b</kbd></dt><dd>Agile Board</dd>
+      <dt><kbd>g</kbd> <kbd>s</kbd></dt><dd>Sprints</dd>
+      <dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>Berichte</dd>
+      <dt><kbd>g</kbd> <kbd>t</kbd></dt><dd>Team</dd>
+      <dt><kbd>?</kbd></dt><dd>Diese Hilfe</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Schließen</dd>
+    </dl>
+    <p class="small text-muted mb-0">Kürzel sind beim Tippen in Eingabefeldern deaktiviert.</p>
+  </div>
+</div>

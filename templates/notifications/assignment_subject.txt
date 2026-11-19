@@ -1,0 +1,1 @@
+{% autoescape off %}[{{ project.key }}] {{ item.key }} wurde dir zugewiesen: {{ item.title|truncatechars:80 }}{% endautoescape %}

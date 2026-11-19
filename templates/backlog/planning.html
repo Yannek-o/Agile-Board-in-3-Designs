@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load agile static %}
+{% block title %}Backlog-Planung · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Backlog</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Planung</div>
+    <h1>Backlog</h1>
+    <p>Einträge per Drag &amp; Drop in Sprints einplanen oder zurück in den Backlog legen</p>
+  </div>
+  <div class="actions">
+    {% if access.can_manage_backlog %}
+      <a class="btn btn-ghost" href="{% url 'sprints:create' project.key %}">+ Sprint</a>
+      <a class="btn btn-accent" href="{% url 'backlog:create' project.key %}">+ Neuer Eintrag</a>
+    {% endif %}
+  </div>
+</div>
+{% include "backlog/_tabs.html" with active_tab="planning" %}
+{% if project.product_goal %}
+<div class="ab-goal mb-3"><span class="label me-3">PRODUCT GOAL</span>{{ project.product_goal }}</div>
+{% endif %}
+
+<div class="plan-board" {% if can_plan %}data-move-url="{% url 'backlog:plan_move' project.key %}"{% endif %}>
+  {% for section in sections %}
+  <section class="plan-section{% if section.sprint.status == 'active' %} is-active{% elif not section.sprint %} is-backlog{% endif %}" aria-labelledby="plan-heading-{{ forloop.counter }}">
+    <header class="plan-section-header">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h2 id="plan-heading-{{ forloop.counter }}" class="mb-0">{% if section.sprint %}<a class="text-reset" href="{% url 'sprints:detail' project.key section.sprint.number %}">{{ section.title }}</a>{% else %}{{ section.title }}{% endif %}</h2>
+        {% if section.sprint %}
+          <span class="ab-badge {{ section.sprint.status|badge_class }}">{{ section.sprint.get_status_display }}</span>
+          <span class="text-muted small">{{ section.sprint.start_date|date:"d.m." }} – {{ section.sprint.end_date|date:"d.m.Y" }}</span>
+        {% endif %}
+      </div>
+      <div class="plan-section-stats small">
+        <span><strong data-section-count>{{ section.items|length }}</strong> Einträge</span>
+        <span><strong data-section-points>{{ section.points }}</strong> SP</span>
+      </div>
+    </header>
+    {% if section.sprint.goal %}<p class="text-muted small mb-2">Ziel: {{ section.sprint.goal }}</p>{% endif %}
+    <div class="plan-dropzone" data-sprint="{{ section.sprint.number|default_if_none:'' }}" aria-label="{{ section.title }}">
+      {% for item in section.items %}
+      <article class="plan-row" data-item="{{ item.number }}" data-points="{{ item.story_points|default_if_none:0 }}" {% if can_plan %}draggable="true"{% endif %}>
+        {% if can_plan %}<span class="drag-handle" aria-hidden="true" title="Ziehen zum Einplanen">⋮⋮</span>{% endif %}
+        <a class="item-key small" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.key }}</a>
+        <span class="plan-title">
+          {% if item.epic %}<span class="epic-chip me-1" style="--epic: {{ item.epic.display_color }}">{{ item.epic.title }}</span>{% endif %}
+          <a class="text-reset" href="{% url 'backlog:detail' project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.title }}</a>
+        </span>
+        <span class="ab-badge badge-neutral d-none d-md-inline-flex">{{ item.get_item_type_display }}</span>
+        <span class="ab-badge {{ item.priority|badge_class }}">{{ item.get_priority_display }}</span>
+        {% if section.sprint %}<span class="ab-badge {{ item.status|badge_class }}">{{ item|status_label }}</span>{% endif %}
+        <span class="plan-points" title="Story Points">{{ item.story_points|default_if_none:"–" }}</span>
+        {% include "includes/avatar.html" with user=item.assignee small=True %}
+        {% if can_plan %}
+        <form class="plan-move-form" method="post" action="{% url 'backlog:plan_move' project.key %}">
+          {% csrf_token %}
+          <input type="hidden" name="item" value="{{ item.number }}">
+          <label class="visually-hidden" for="plan-move-{{ item.number }}">{{ item.key }} verschieben nach</label>
+          <select id="plan-move-{{ item.number }}" class="form-select form-select-sm" name="sprint">
+            {% for sprint in sprints %}<option value="{{ sprint.number }}" {% if section.sprint == sprint %}selected{% endif %}>{{ sprint.label }}</option>{% endfor %}
+            <option value="backlog" {% if not section.sprint %}selected{% endif %}>Backlog</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" type="submit">Verschieben</button>
+        </form>
+        {% endif %}
+      </article>
+      {% endfor %}
+      <p class="plan-empty"{% if section.items %} hidden{% endif %}>{% if can_plan %}Einträge hierher ziehen{% else %}Keine Einträge{% endif %}</p>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+<p class="text-muted small mt-2">Epics und Unteraufgaben werden nicht direkt eingeplant – das Epic erscheint als Markierung an der Story. Die Reihenfolge im Backlog lässt sich in der Listenansicht ändern.</p>
+{% endblock %}
+{% block scripts %}<script src="{% asset 'js/planning.js' %}"></script>{% endblock %}

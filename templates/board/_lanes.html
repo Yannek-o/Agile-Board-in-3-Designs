@@ -1,0 +1,18 @@
+{% load agile %}{% for lane in lanes %}
+  {% if lane.label %}
+  <details class="board-lane" open>
+    <summary class="board-lane-header"><span class="lane-title">{{ lane.label }}</span><span class="board-count" aria-label="Anzahl">{{ lane.items|length }}</span></summary>
+    <div class="board-lane-columns">
+      {% for column in lane.columns %}{% include "board/_column.html" %}{% endfor %}
+    </div>
+  </details>
+  {% else %}
+  <div class="board-lane">
+    <div class="board-lane-columns">
+      {% for column in lane.columns %}{% include "board/_column.html" %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+{% empty %}
+  <p class="ab-note mb-0">Keine Karten passen zu den gewählten Filtern.</p>
+{% endfor %}

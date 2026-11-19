@@ -1,0 +1,14 @@
+{% autoescape off %}Hallo {{ recipient.display_name }},
+
+{% if event == "started" %}{{ actor|default:"Jemand" }} hat {{ sprint.label }} im Projekt {{ project.name }} gestartet.
+
+Sprint-Ziel: {{ sprint.goal }}
+Zeitraum: {{ sprint.start_date|date:"d.m.Y" }} – {{ sprint.end_date|date:"d.m.Y" }}{% else %}{{ actor|default:"Jemand" }} hat {{ sprint.label }} im Projekt {{ project.name }} abgeschlossen.
+
+Story Points erledigt: {{ sprint.completed_points }} von {{ sprint.committed_points }}{% if sprint.review_notes %}
+Abschlussnotiz: {{ sprint.review_notes }}{% endif %}{% endif %}
+
+{{ url }}
+
+Benachrichtigungen lassen sich im Profil abschalten.
+{% endautoescape %}

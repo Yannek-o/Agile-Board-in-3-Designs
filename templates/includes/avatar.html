@@ -1,0 +1,1 @@
+{% if user %}<span class="avatar{% if small %} sm{% endif %}{% if user == request.user %} me{% endif %}{% if user.avatar_background %} has-color{% endif %}"{% if user.avatar_background %} style="--avatar-bg: {{ user.avatar_background }}; --avatar-fg: {{ user.avatar_text_color }}"{% endif %} title="{{ user.display_name }}">{{ user.initials }}</span>{% endif %}

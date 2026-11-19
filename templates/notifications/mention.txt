@@ -1,0 +1,10 @@
+{% autoescape off %}Hallo {{ recipient.display_name }},
+
+{{ actor.display_name|default:"Jemand" }} hat dich in {{ item.key }} „{{ item.title }}“ erwähnt:
+
+{{ comment.body|truncatechars:1500 }}
+
+{{ url }}
+
+Benachrichtigungen lassen sich im Profil abschalten.
+{% endautoescape %}

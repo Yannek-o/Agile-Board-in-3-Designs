@@ -1,0 +1,177 @@
+{% load static agile %}<!DOCTYPE html>
+<html lang="de" data-bs-theme="dark" data-design="{{ user.design|default:'neon' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}Agile Board{% endblock %} · Agile Board</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% asset 'css/app.css' %}">
+  {% if user.design == "patina" %}
+  <link rel="stylesheet" href="{% asset 'css/patina.css' %}">
+  <script src="{% asset 'js/patina-theme.js' %}"></script>
+  {% else %}
+  {% if user.design == "kalt" %}<link rel="stylesheet" href="{% asset 'css/kalt.css' %}">{% endif %}
+  <script src="{% asset 'js/theme.js' %}"></script>
+  {% endif %}
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+{% include "includes/backdrop.html" %}
+<a class="visually-hidden-focusable skip-link" href="#main-content">Zum Inhalt springen</a>
+{% block body %}
+<div class="ab-shell">
+  <header class="ab-navbar" data-bs-theme="dark">
+    <div class="ab-navbar-inner">
+      <div class="ab-brand">
+        <a href="{% url 'reporting:dashboard' %}">{% include "includes/brand.html" %}</a>
+      </div>
+      <button type="button" class="ab-nav-toggle" aria-controls="ab-primary-nav" aria-expanded="false" aria-label="Menü öffnen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="line line-1" d="M4 7h16"/><path class="line line-2" d="M4 12h16"/><path class="line line-3" d="M4 17h16"/></svg>
+      </button>
+      <nav id="ab-primary-nav" class="ab-nav" aria-label="Hauptnavigation">
+        <span class="ab-nav-indicator" aria-hidden="true"></span>
+        <a href="{% url 'reporting:dashboard' %}"{% if nav_namespace == 'reporting' and nav_url_name == 'dashboard' %} class="active" aria-current="page"{% endif %} title="Dashboard">{% include "includes/nav_icon.html" with name="dashboard" %}<span class="nav-label">Dashboard</span></a>
+        <a href="{% url 'projects:list' %}"{% if nav_namespace == 'projects' and nav_url_name != 'team' %} class="active" aria-current="page"{% endif %} title="Projekte">{% include "includes/nav_icon.html" with name="projects" %}<span class="nav-label">Projekte</span></a>
+        <span class="ab-nav-sep" aria-hidden="true"></span>
+        {% if nav_current_project %}<span class="ab-nav-project" title="Aktuelles Projekt: {{ nav_current_project.name }}">{{ nav_current_project.key }}</span>{% endif %}
+        <a href="{% url 'core:go' 'backlog' %}"{% if nav_namespace == 'backlog' %} class="active" aria-current="page"{% endif %} title="Product Backlog">{% include "includes/nav_icon.html" with name="backlog" %}<span class="nav-label">Backlog</span></a>
+        <a href="{% url 'core:go' 'sprints' %}"{% if nav_namespace == 'sprints' %} class="active" aria-current="page"{% endif %} title="Sprintplanung">{% include "includes/nav_icon.html" with name="sprints" %}<span class="nav-label">Sprints</span></a>
+        <a href="{% url 'core:go' 'board' %}"{% if nav_namespace == 'board' %} class="active" aria-current="page"{% endif %} title="Agile Board">{% include "includes/nav_icon.html" with name="board" %}<span class="nav-label">Board</span></a>
+        <a href="{% url 'core:go' 'reports' %}"{% if nav_namespace == 'reporting' and nav_url_name == 'project_report' or nav_namespace == 'activity' %} class="active" aria-current="page"{% endif %} title="Berichte">{% include "includes/nav_icon.html" with name="reports" %}<span class="nav-label">Berichte</span></a>
+        <a href="{% url 'core:go' 'team' %}"{% if nav_namespace == 'projects' and nav_url_name == 'team' %} class="active" aria-current="page"{% endif %} title="Teamverwaltung">{% include "includes/nav_icon.html" with name="team" %}<span class="nav-label">Team</span></a>
+      </nav>
+      <div class="ab-navbar-actions">
+        <a class="ab-search-trigger" href="{% url 'core:search' %}" data-palette-open data-palette-url="{% url 'core:search' %}" title="Suchen (Strg+K)" aria-label="Suchen, Tastenkürzel Strg+K">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="label">Suchen</span><kbd>Strg K</kbd>
+        </a>
+        <span class="ab-status-dot" title="Internes System – verbunden"><span class="visually-hidden">Internes System</span></span>
+        <div class="dropdown">
+          <button type="button" class="ab-bell" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Benachrichtigungen, {{ unread_notifications|default:0 }} ungelesen" data-unread-url="{% url 'notifications:unread_count' %}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="ab-bell-count"{% if not unread_notifications %} hidden{% endif %}>{{ unread_notifications|default:0 }}</span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end ab-user-menu ab-bell-menu">
+            <div class="bell-header">
+              <strong>Benachrichtigungen</strong>
+              {% if unread_notifications %}
+              <form method="post" action="{% url 'notifications:mark_all_read' %}">{% csrf_token %}<button type="submit" class="btn-link-plain small">Alle gelesen</button></form>
+              {% endif %}
+            </div>
+            {% for notification in recent_notifications %}
+              <a class="dropdown-item bell-item{% if notification.is_unread %} unread{% endif %}" href="{% url 'notifications:open' notification.pk %}">
+                {% include "includes/avatar.html" with user=notification.actor small=True %}
+                <span class="bell-text"><span class="bell-message">{{ notification.message }}</span><small>{{ notification.created_at|timesince }}</small></span>
+              </a>
+            {% empty %}
+              <p class="text-muted small px-3 py-2 mb-0">Keine Benachrichtigungen.</p>
+            {% endfor %}
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item justify-content-center" href="{% url 'notifications:list' %}">Alle anzeigen</a>
+          </div>
+        </div>
+        {% if user.design == "patina" %}{% include "includes/theme_slider.html" %}{% else %}{% include "includes/theme_toggle.html" %}{% endif %}
+        <div class="dropdown">
+          <button type="button" class="ab-user-button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Benutzermenü von {{ user.display_name }}">
+            <span class="avatar me sm{% if user.avatar_background %} has-color{% endif %}"{% if user.avatar_background %} style="--avatar-bg: {{ user.avatar_background }}; --avatar-fg: {{ user.avatar_text_color }}"{% endif %} aria-hidden="true">{{ user.initials }}</span>
+            <span class="name">{{ user.display_name }}</span>
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end ab-user-menu">
+            <div class="menu-identity">
+              <strong>{{ user.display_name }}</strong>
+              <small>{{ user.job_title|default:"Intern" }}</small>
+              <div class="menu-status">INTERNES SYSTEM</div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="menu-profile-row">
+              <a class="dropdown-item{% if nav_namespace == 'accounts' and nav_url_name == 'profile' %} active{% endif %}" href="{% url 'accounts:profile' %}">{% include "includes/nav_icon.html" with name="profile" %}Mein Profil</a>
+              <a class="dropdown-item{% if nav_namespace == 'api' %} active{% endif %}" href="{% url 'api:tokens' %}">{% include "includes/nav_icon.html" with name="profile" %}API-Tokens</a>
+              <button type="button" class="avatar-color-toggle" aria-expanded="false" aria-controls="avatar-color-panel" aria-label="Avatar-Farbe wählen" title="Avatar-Farbe wählen" data-avatar-color-toggle><span class="avatar-color-dot{% if user.avatar_background %} has-color{% endif %}"{% if user.avatar_background %} style="--avatar-bg: {{ user.avatar_background }}"{% endif %} aria-hidden="true"></span></button>
+            </div>
+            <form id="avatar-color-panel" class="avatar-color-panel" method="post" action="{% url 'accounts:avatar_color' %}" data-avatar-color hidden>
+              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <div class="avatar-color-head">
+                <span class="avatar me avatar-preview{% if user.avatar_background %} has-color{% endif %}"{% if user.avatar_background %} style="--avatar-bg: {{ user.avatar_background }}; --avatar-fg: {{ user.avatar_text_color }}"{% endif %} aria-hidden="true">{{ user.initials }}</span>
+                <div><strong>Avatar-Farbe</strong><small>Gilt in allen Designs</small></div>
+              </div>
+              <div class="avatar-presets" role="group" aria-label="Vorschläge">
+                {% avatar_presets as avatar_presets %}{% for preset in avatar_presets %}<button type="button" class="avatar-preset" data-color="{{ preset.0 }}" data-color-2="{{ preset.1 }}" style="--swatch: {% if preset.1 %}linear-gradient(135deg, {{ preset.0 }}, {{ preset.1 }}){% else %}{{ preset.0 }}{% endif %}" aria-label="{{ preset.2 }}" title="{{ preset.2 }}"></button>{% endfor %}
+              </div>
+              <div class="avatar-color-inputs">
+                <label class="avatar-color-field">Farbe<input type="color" name="color" value="{{ user.avatar_color|default:'#ff6b00' }}"></label>
+                <label class="avatar-gradient-check"><input class="form-check-input" type="checkbox" name="gradient" value="1"{% if user.avatar_color_2 %} checked{% endif %}> Verlauf</label>
+                <label class="avatar-color-field" data-gradient-field{% if not user.avatar_color_2 %} hidden{% endif %}>bis<input type="color" name="color_2" value="{{ user.avatar_color_2|default:'#8b5cf6' }}"></label>
+              </div>
+              <div class="avatar-color-actions">
+                <span class="small text-muted" data-avatar-status aria-live="polite"></span>
+                <button type="submit" name="reset" value="1" class="btn btn-sm btn-ghost" data-avatar-reset>Zurücksetzen</button>
+                <button type="submit" class="btn btn-sm btn-accent">Speichern</button>
+              </div>
+            </form>
+            {% if user.is_system_admin %}
+              <a class="dropdown-item{% if nav_namespace == 'accounts' and 'user_' in nav_url_name %} active{% endif %}" href="{% url 'accounts:user_list' %}">{% include "includes/nav_icon.html" with name="users" %}Mitarbeiterkonten</a>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <form class="design-switch" method="post" action="{% url 'accounts:design' %}" aria-label="Design wählen">
+              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <span class="design-switch-label">Design</span>
+              <div class="design-switch-options">
+                <button type="submit" name="design" value="neon" class="design-option design-neon" aria-pressed="{% if user.design == 'neon' %}true{% else %}false{% endif %}"><span class="design-swatch" aria-hidden="true"></span>Neon</button>
+                <button type="submit" name="design" value="patina" class="design-option design-patina" aria-pressed="{% if user.design == 'patina' %}true{% else %}false{% endif %}"><span class="design-swatch" aria-hidden="true"></span>Patina</button>
+                <button type="submit" name="design" value="kalt" class="design-option design-kalt" aria-pressed="{% if user.design == 'kalt' %}true{% else %}false{% endif %}"><span class="design-swatch" aria-hidden="true"></span>Kalt</button>
+              </div>
+            </form>
+            <div class="dropdown-divider"></div>
+            <form method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item logout">{% include "includes/nav_icon.html" with name="logout" %}Abmelden</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main-content" class="ab-content" tabindex="-1">
+    <nav class="ab-breadcrumb" aria-label="Pfad">
+      <a href="{% url 'reporting:dashboard' %}">Arbeitsbereich</a> /
+      {% block breadcrumb %}{% endblock %}
+    </nav>
+    <div id="ab-live-messages" class="ab-toast-stack" aria-live="polite">
+      {% for message in messages %}{% with kind=message|message_kind undo_url=message|message_undo_url %}
+        <div class="ab-toast toast-{{ kind }}"{% if kind == "danger" %} role="alert"{% endif %} data-kind="{{ kind }}"{% if undo_url %} data-undo-url="{{ undo_url }}"{% endif %}>
+          <span class="ab-toast-icon" aria-hidden="true"></span>
+          <span class="ab-toast-text">{{ message }}</span>
+          {% if undo_url %}<form class="ab-toast-undo" method="post" action="{{ undo_url }}">{% csrf_token %}<button type="submit">Rückgängig</button></form>{% endif %}
+          <button type="button" class="ab-toast-close" data-toast-close aria-label="Schließen">×</button>
+        </div>
+      {% endwith %}{% endfor %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="itemModalTitle">Details</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+      </div>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+</div>
+{% include "includes/command_palette.html" %}
+{% endblock %}
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+<script src="{% asset 'js/app.js' %}"></script>
+<script src="{% asset 'js/effects.js' %}"></script>
+<script src="{% asset 'js/nav.js' %}"></script>
+<script src="{% asset 'js/inline.js' %}"></script>
+<script src="{% asset 'js/mentions.js' %}"></script>
+<script src="{% asset 'js/avatar-color.js' %}"></script>
+<script src="{% asset 'js/palette.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% if report %}
+<details class="ab-card ab-collapsible sprint-report {{ extra_class }}" open>
+  <summary><h2 id="report-heading">Sprint-Bericht</h2><span class="ms-auto ab-badge {% if report.summary.percent >= 80 %}badge-success{% elif report.summary.percent >= 50 %}badge-warning{% else %}badge-neutral{% endif %}">{{ report.summary.completed }} von {{ report.summary.final_scope }} SP erledigt · {{ report.summary.percent }} %</span></summary>
+  <div class="report-figures mt-3">
+    <div><span class="label">Zu Beginn geplant</span><span class="value">{{ report.summary.committed_at_start }}</span></div>
+    <div><span class="label">Hinzugefügt</span><span class="value text-warning">+{{ report.summary.added }}</span></div>
+    <div><span class="label">Entfernt</span><span class="value">−{{ report.summary.removed }}</span></div>
+    <div><span class="label">Erledigt</span><span class="value text-success">{{ report.summary.completed }}</span></div>
+  </div>
+  <div class="report-groups">
+    {% include "sprints/_report_group.html" with title="Erledigt" rows=report.completed empty="Noch nichts erledigt." tone="success" %}
+    {% include "sprints/_report_group.html" with title="Nicht erledigt" rows=report.not_completed empty="Alles erledigt." tone="warning" %}
+    {% include "sprints/_report_group.html" with title="Nach dem Start hinzugefügt" rows=report.added empty="Keine Änderung am Umfang." tone="info" %}
+    {% include "sprints/_report_group.html" with title="Während des Sprints entfernt" rows=report.removed empty="Nichts entfernt." tone="neutral" %}
+  </div>
+</details>
+{% endif %}

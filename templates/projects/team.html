@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}Team · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Teamverwaltung</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Verwaltung</div>
+    <h1>Team &amp; Berechtigungen</h1>
+    <p>Mitarbeiter zuordnen, Scrum-Verantwortlichkeiten und Zugriffsrechte trennen</p>
+  </div>
+  {% if access.can_manage_project %}
+    <div class="actions"><a class="btn btn-accent" href="{% url 'projects:member_add' project.key %}">+ Mitarbeiter</a></div>
+  {% endif %}
+</div>
+<div class="ab-card mb-3 d-flex align-items-center flex-wrap gap-2">
+  <h2 class="mb-0 me-auto">Projekt: {{ project.name }}</h2>
+  <form method="get" action="{% url 'core:go' 'team' %}" class="d-flex gap-2" onsubmit="window.location.href=this.querySelector('select').value; return false;">
+    <label class="visually-hidden" for="switch-project">Projekt wechseln</label>
+    <select id="switch-project" class="form-select form-select-sm" onchange="window.location.href=this.value">
+      {% for other in switch_projects %}
+        <option value="{% url 'projects:team' other.key %}" {% if other == project %}selected{% endif %}>{{ other.key }} · {{ other.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+<div class="ab-table-wrap mb-3">
+  <table class="table ab-table">
+    <thead><tr><th>Mitarbeiter</th><th>Scrum-Verantwortlichkeit</th><th>Technische Rechte</th><th>Backlog &amp; Sprint</th><th>Zugriff</th>{% if access.can_manage_project %}<th>Aktion</th>{% endif %}</tr></thead>
+    <tbody>
+    {% for membership in memberships %}
+      <tr>
+        <td><div class="d-flex align-items-center gap-2">{% include "includes/avatar.html" with user=membership.user small=True %}{{ membership.user.display_name }}</div></td>
+        <td><span class="ab-badge {{ membership.scrum_role|badge_class }}">{{ membership.get_scrum_role_display }}</span></td>
+        <td>{{ membership.get_access_level_display }}</td>
+        <td>{% if membership.access_level == 'manage' or membership.access_level == 'edit' and membership.can_manage_backlog %}Ja{% else %}Nein{% endif %}</td>
+        <td>{% if membership.is_active and membership.user.is_active %}<span class="ab-badge badge-success">Aktiv</span>{% else %}<span class="ab-badge badge-danger">Inaktiv</span>{% endif %}</td>
+        {% if access.can_manage_project %}
+        <td class="text-nowrap">
+          <a href="{% url 'projects:member_edit' project.key membership.pk %}">Bearbeiten</a>
+          {% if membership.is_active %}
+          <form class="d-inline ms-2" method="post" action="{% url 'projects:member_remove' project.key membership.pk %}" onsubmit="return confirm('Mitglied aus dem Projekt entfernen?');">
+            {% csrf_token %}<button type="submit" class="btn-link-plain text-danger">Entfernen</button>
+          </form>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-muted">Noch keine Mitglieder.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="ab-goal">
+  <div class="fw-bold" style="color:var(--ab-success)">Scrum-Verantwortlichkeit ≠ technische Berechtigung</div>
+  <div class="small text-muted">Die Zusammenarbeit im Team und die erlaubten Systemaktionen werden getrennt verwaltet. Mitglieder mit „Bearbeitung“ pflegen Backlog und Sprints erst nach Freigabe.</div>
+</div>
+{% endblock %}

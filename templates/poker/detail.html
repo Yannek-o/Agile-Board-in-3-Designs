@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}Planning Poker {{ session.item.key }} · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'poker:list' project.key %}">{{ project.key }} Planning Poker</a> / <strong>{{ session.item.key }}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Planning Poker</div>
+    <h1><a class="item-key" href="{% url 'backlog:detail' project.key session.item.number %}" data-item-modal data-item-key="{{ session.item.key }}">{{ session.item.key }}</a> {{ session.item.title }}</h1>
+    <p>Aktuell: <strong data-poker-current>{{ session.item.story_points|default_if_none:"ungeschätzt" }}</strong>{% if session.item.story_points is not None %} SP{% endif %}</p>
+  </div>
+</div>
+<div class="poker" data-poker data-state-url="{% url 'poker:detail' project.key session.pk %}" data-vote-url="{% url 'poker:vote' project.key session.pk %}" data-poll="{{ poll_interval }}">
+  <div class="poker-status">
+    <span class="ab-badge badge-info" data-poker-status>{{ state.status_label }}</span>
+    <span class="text-muted small">Runde <span data-poker-round>{{ state.round }}</span></span>
+  </div>
+
+  <section aria-labelledby="poker-team">
+    <h2 id="poker-team" class="visually-hidden">Team</h2>
+    <ul class="poker-table" data-poker-votes>
+      {% for vote in state.votes %}
+      <li class="poker-seat{% if vote.voted %} voted{% endif %}">
+        <span class="poker-card-back">{% if vote.value %}{{ vote.value }}{% elif vote.voted %}✓{% else %}…{% endif %}</span>
+        <span class="small">{{ vote.name }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="poker-summary" data-poker-summary {% if not state.summary %}hidden{% endif %}>
+    {% if state.summary %}Ø {{ state.summary.average }} · Min {{ state.summary.min }} · Max {{ state.summary.max }} · Vorschlag <strong>{{ state.summary.suggestion }}</strong>{% endif %}
+  </div>
+
+  {% if session.is_open and access.can_change_status %}
+  <section aria-labelledby="poker-deck-title">
+    <h2 id="poker-deck-title" class="h6 text-muted">Deine Karte</h2>
+    <form class="poker-deck" method="post" action="{% url 'poker:vote' project.key session.pk %}" data-poker-deck>
+      {% csrf_token %}
+      {% for card in deck %}
+        <button type="submit" name="value" value="{{ card }}" class="poker-card{% if state.my_vote == card %} selected{% endif %}" aria-pressed="{% if state.my_vote == card %}true{% else %}false{% endif %}" {% if state.status != 'voting' %}disabled{% endif %}>{{ card }}</button>
+      {% endfor %}
+    </form>
+  </section>
+  {% endif %}
+
+  {% if session.is_open and access.can_manage_backlog %}
+  <div class="poker-actions">
+    <form method="post" action="{% url 'poker:reveal' project.key session.pk %}" data-poker-action>{% csrf_token %}<button class="btn btn-accent" type="submit" data-show-when="voting">Aufdecken</button></form>
+    <form method="post" action="{% url 'poker:reset' project.key session.pk %}" data-poker-action>{% csrf_token %}<button class="btn btn-ghost" type="submit">Neue Runde</button></form>
+    <form class="poker-accept" method="post" action="{% url 'poker:accept' project.key session.pk %}">
+      {% csrf_token %}
+      <label class="visually-hidden" for="poker-points">Story Points</label>
+      <input id="poker-points" class="form-control" type="number" name="points" min="0" max="100" required value="{{ state.summary.suggestion|default_if_none:'' }}" data-poker-points>
+      <button class="btn btn-ghost" type="submit">Übernehmen</button>
+    </form>
+    <form method="post" action="{% url 'poker:close' project.key session.pk %}">{% csrf_token %}<button class="btn-link-plain small text-muted" type="submit">Abbrechen</button></form>
+  </div>
+  {% elif not session.is_open %}
+  <p class="ab-note">Abgeschlossen{% if session.final_points is not None %} mit <strong>{{ session.final_points }} Story Points</strong>{% endif %}. <a href="{% url 'poker:list' project.key %}">Zur Übersicht</a></p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% asset 'js/poker.js' %}"></script>{% endblock %}

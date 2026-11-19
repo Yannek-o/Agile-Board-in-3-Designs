@@ -1,0 +1,11 @@
+{% autoescape off %}Hallo {{ recipient.display_name }},
+
+{{ actor|default:"Jemand" }} hat dir im Projekt {{ project.name }} einen Eintrag zugewiesen:
+
+{{ item.key }} – {{ item.title }}
+Typ: {{ item.get_item_type_display }} · Priorität: {{ item.get_priority_display }} · Status: {{ item.get_status_display }}
+
+{{ url }}
+
+Benachrichtigungen lassen sich im Profil abschalten.
+{% endautoescape %}

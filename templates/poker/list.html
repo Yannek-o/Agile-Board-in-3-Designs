@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Planning Poker · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backlog:list' project.key %}">{{ project.key }} Backlog</a> / <strong>Planning Poker</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div><div class="eyebrow">{{ project.name }} / Product Backlog</div><h1>Planning Poker</h1><p>Gemeinsam schätzen – verdeckt abstimmen, aufdecken, Story Points übernehmen</p></div>
+</div>
+{% include "backlog/_tabs.html" with active_tab="poker" %}
+<div class="row g-3">
+  <div class="{% if access.can_manage_backlog %}col-lg-8{% else %}col-12{% endif %}">
+    <div class="ab-card">
+      <h2>Laufende Runden</h2>
+      {% for session in open_sessions %}
+        <a class="poker-session-row" href="{% url 'poker:detail' project.key session.pk %}">
+          <span class="item-key">{{ session.item.key }}</span>
+          <span class="flex-grow-1">{{ session.item.title }}</span>
+          <span class="ab-badge {% if session.status == 'voting' %}badge-info{% else %}badge-warning{% endif %}">{{ session.get_status_display }}</span>
+          <span class="text-muted small">Runde {{ session.round }}</span>
+        </a>
+      {% empty %}
+        <p class="ab-note mb-0">Keine laufende Runde.{% if access.can_manage_backlog %} Starte rechts eine Schätzung.{% endif %}</p>
+      {% endfor %}
+    </div>
+    {% if recent_sessions %}
+    <div class="ab-card mt-3">
+      <h2>Zuletzt geschätzt</h2>
+      {% for session in recent_sessions %}
+        <div class="poker-session-row">
+          <a class="item-key" href="{% url 'backlog:detail' project.key session.item.number %}">{{ session.item.key }}</a>
+          <span class="flex-grow-1">{{ session.item.title }}</span>
+          <span>{% if session.final_points is not None %}<strong>{{ session.final_points }} SP</strong>{% else %}<span class="text-muted">abgebrochen</span>{% endif %}</span>
+          <span class="text-muted small">{{ session.updated_at|date:"d.m.Y" }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% if access.can_manage_backlog %}
+  <div class="col-lg-4">
+    <div class="ab-card">
+      <h2>Schätzung starten</h2>
+      <form method="post" action="{% url 'poker:start' project.key %}">
+        {% csrf_token %}
+        <label class="form-label" for="poker-item">Eintrag</label>
+        <select id="poker-item" class="form-select" name="item" required>
+          {% for item in estimable_items %}<option value="{{ item.number }}">{{ item.key }} · {{ item.title|truncatechars:50 }}{% if item.story_points is None %} (ungeschätzt){% else %} ({{ item.story_points }} SP){% endif %}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-accent mt-3">Runde starten</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,1 @@
+{% autoescape off %}[{{ project.key }}] {{ actor.display_name|default:"Jemand" }} hat dich in {{ item.key }} erwähnt{% endautoescape %}

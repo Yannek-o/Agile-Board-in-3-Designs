@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}CSV-Import · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backlog:list' project.key %}">{{ project.key }} Backlog</a> / <strong>CSV-Import</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div><div class="eyebrow">{{ project.name }} / Product Backlog</div><h1>CSV-Import</h1><p>Viele Einträge auf einmal aus Excel oder Jira übernehmen</p></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ab-card">
+      <h2>Datei hochladen</h2>
+      {% if errors %}
+      <div class="alert alert-danger" role="alert">
+        <strong>Nichts importiert – bitte die Datei korrigieren:</strong>
+        <ul class="mb-0 mt-2">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label class="form-label" for="import-file">CSV-Datei (max. 1 MB, 500 Zeilen)</label>
+        <input id="import-file" class="form-control" type="file" name="file" accept=".csv,text/csv" required>
+        <button type="submit" class="btn btn-accent mt-3">Importieren</button>
+        <a class="btn btn-ghost mt-3" href="{% url 'backlog:list' project.key %}">Abbrechen</a>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="ab-card">
+      <h2>Format</h2>
+      <p class="small text-muted">Erste Zeile = Spaltennamen, getrennt durch Semikolon oder Komma. Unbekannte Spalten werden ignoriert – eine CSV aus dem Export lässt sich direkt wieder importieren.</p>
+      <table class="table ab-table small mb-2">
+        <thead><tr><th>Spalte</th><th>Werte</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Titel</strong> (Pflicht)</td><td>max. 200 Zeichen</td></tr>
+          <tr><td>Typ</td><td>{% for value, label in type_choices %}{{ label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+          <tr><td>Priorität</td><td>{% for value, label in priority_choices %}{{ label }}{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+          <tr><td>Story Points</td><td>0–100</td></tr>
+          <tr><td>Bearbeiter</td><td>Benutzername eines Mitglieds</td></tr>
+          <tr><td>Beschreibung</td><td>Text, Markdown erlaubt</td></tr>
+        </tbody>
+      </table>
+      <pre class="small mb-0"><code>Titel;Typ;Priorität;Story Points;Bearbeiter
+Login bauen;User Story;Hoch;5;{{ request.user.username }}</code></pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

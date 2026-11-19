@@ -1,0 +1,10 @@
+{% load agile %}{% for item in items %}
+<div class="ab-row-link">
+  <span class="item-key small">{{ item.key }}</span>
+  <a class="flex-grow-1 text-reset stretched-link" href="{% url 'backlog:detail' item.project.key item.number %}" data-item-modal data-item-key="{{ item.key }}">{{ item.title }}</a>
+  {% if show_updated %}<span class="text-muted small">{{ item.updated_at|date:"d.m. H:i" }}</span>{% endif %}
+  {% if item.is_blocked %}<span class="ab-badge badge-blocked" {% if item.blocked_reason %}title="{{ item.blocked_reason }}"{% endif %}>Blockiert</span>{% endif %}
+  {% if item.is_high_priority %}<span class="ab-badge {{ item.priority|badge_class }}">{{ item.get_priority_display }}</span>{% endif %}
+  <span class="ab-badge {{ item.status|badge_class }}">{{ item|status_label }}</span>
+</div>
+{% empty %}<p class="text-muted mb-0">{{ empty_text|default:"Keine Einträge." }}</p>{% endfor %}

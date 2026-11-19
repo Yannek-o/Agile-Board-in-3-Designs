@@ -1,0 +1,7 @@
+<nav class="ab-tabs mb-3" aria-label="Backlog-Ansicht">
+  <a href="{% url 'backlog:planning' project.key %}"{% if active_tab == 'planning' %} class="active" aria-current="page"{% endif %}>Planung</a>
+  <a href="{% url 'backlog:list' project.key %}"{% if active_tab == 'list' %} class="active" aria-current="page"{% endif %}>Liste</a>
+  <a href="{% url 'backlog:epics' project.key %}"{% if active_tab == 'epics' %} class="active" aria-current="page"{% endif %}>Epics</a>
+  <a href="{% url 'backlog:releases' project.key %}"{% if active_tab == 'releases' %} class="active" aria-current="page"{% endif %}>Releases</a>
+  <a href="{% url 'poker:list' project.key %}"{% if active_tab == 'poker' %} class="active" aria-current="page"{% endif %}>Planning Poker</a>
+</nav>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Mein Profil{% endblock %}
+{% block breadcrumb %}<strong>Profil</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Konto</div>
+    <h1>Mein Profil</h1>
+    <p>Persönliche Angaben und Projektzuordnungen</p>
+  </div>
+  <div class="actions"><a class="btn btn-ghost" href="{% url 'accounts:password_change' %}">Passwort ändern</a></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ab-card">
+      <h2>Angaben</h2>
+      <form method="post">
+        {% csrf_token %}
+        {% include "includes/form_fields.html" %}
+        <button type="submit" class="btn btn-accent mt-3">Speichern</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="ab-card">
+      <h2>Meine Projekte</h2>
+      {% for membership in user.memberships.all %}
+        {% if membership.is_active %}
+        <div class="plan-item">
+          <div class="grow"><a href="{% url 'projects:detail' membership.project.key %}">{{ membership.project.name }}</a></div>
+          <span class="ab-badge badge-info">{{ membership.get_scrum_role_display }}</span>
+          <span class="ab-badge badge-neutral">{{ membership.get_access_level_display }}</span>
+        </div>
+        {% endif %}
+      {% empty %}
+        <p class="text-muted mb-0">Noch keinem Projekt zugeordnet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

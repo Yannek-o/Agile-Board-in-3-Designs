@@ -1,0 +1,414 @@
+/* =====================================================================
+   Agile Board – "Patina" design layer
+   Loaded in addition to app.css for users who chose the Patina design.
+   Every rule is scoped to html[data-design="patina"]; app.css provides
+   the shared layout, so all features look consistent in both designs.
+   Surface and text colours are blended continuously by js/patina-theme.js
+   (slider from light 0 % to dark 100 %) and set as inline custom properties.
+   ===================================================================== */
+
+/* ---------- Tokens (dark end; the slider overrides surfaces and text) ---------- */
+html[data-design="patina"] {
+  --ab-bg: #171f20;
+  --ab-bg-2: #1c2c2d;
+  --ab-surface: rgba(46, 86, 88, 0.97);
+  --ab-surface-2: rgba(54, 96, 98, 0.98);
+  --ab-surface-3: rgba(66, 112, 114, 0.98);
+  --ab-surface-solid: #163233;
+  --ab-card: rgba(58, 102, 104, 0.99);
+  --ab-column: rgba(24, 46, 48, 0.95);
+  --ab-input: rgba(14, 32, 34, 0.9);
+  --ab-header-bg: rgba(9, 22, 23, 0.96);
+  --ab-border: rgba(170, 232, 235, 0.3);
+  --ab-border-strong: rgba(178, 239, 242, 0.32);
+  --ab-text: #eefbfc;
+  --ab-text-muted: #9ec2c4;
+  --ab-accent: #3fd4c4;
+  --ab-accent-hover: #6ff0e2;
+  --ab-accent-text: #5fe3d4;
+  --ab-accent-contrast: #04121c;
+  --ab-accent-2: #d98a4e;
+  --ab-accent-3: #f28c00;
+  --ab-copper: #d98a4e;
+  --ab-logo-orange: #f28c00;
+  --ab-gradient: linear-gradient(120deg, #d98a4e 0%, #3fd4c4 100%);
+  --ab-gradient-text: linear-gradient(120deg, #eefbfc 0%, #a4faff 100%);
+  --ab-gradient-button:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 38%, rgba(0, 0, 0, 0.12) 100%),
+    linear-gradient(135deg, rgba(123, 248, 255, 0.75) 0%, rgba(63, 212, 196, 0.45) 100%);
+  --ab-glow: 0 0 0 1px rgba(63, 212, 196, 0.45), 0 0 22px rgba(63, 212, 196, 0.3);
+  --ab-glow-violet: 0 0 0 1px rgba(217, 138, 78, 0.5), 0 0 22px rgba(217, 138, 78, 0.3);
+  --ab-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 0 0 1px rgba(0, 0, 0, 0.35), 0 14px 36px rgba(0, 0, 0, 0.55);
+  --ab-glass: linear-gradient(160deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0.04) 100%);
+  --ab-metal: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 38%, rgba(0, 0, 0, 0.12) 100%);
+  --ab-texture-opacity: 0.26;
+  --ab-link: #a4faff;
+  --ab-link-hover: #c7fcff;
+  --ab-success: #3bcd80;
+  --ab-success-bg: rgba(59, 205, 128, 0.14);
+  --ab-warning: #ffa23a;
+  --ab-warning-bg: rgba(255, 162, 58, 0.14);
+  --ab-danger: #ff5a64;
+  --ab-danger-bg: rgba(255, 90, 100, 0.14);
+  --ab-info: #6aa8ff;
+  --ab-info-bg: rgba(106, 168, 255, 0.14);
+  --ab-neutral-bg: rgba(176, 220, 222, 0.1);
+  --ab-spotlight: rgba(63, 212, 196, 0.12);
+  --ab-status-todo: #6ff8ff;
+  --ab-status-progress: #19d3f5;
+  --ab-status-review: #ff9a2e;
+  --ab-status-done: #3bcd80;
+  --ab-radius: 1rem;
+  --ab-radius-sm: 0.7rem;
+  --ab-focus: 0 0 0 3px rgba(63, 212, 196, 0.5);
+  --bs-link-color: var(--ab-link);
+  --bs-link-hover-color: var(--ab-link-hover);
+  --bs-link-color-rgb: 164, 250, 255;
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse 70% 55% at 85% -10%, rgba(63, 212, 196, 0.09), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 10% 110%, rgba(217, 138, 78, 0.1), transparent 70%),
+    linear-gradient(180deg, var(--ab-bg-2) 0%, var(--ab-bg) 100%);
+  background-attachment: fixed;
+}
+html[data-design="patina"][data-theme="light"] {
+  --ab-surface-solid: #ffffff;
+  --ab-border: rgba(40, 92, 95, 0.2);
+  --ab-border-strong: rgba(40, 92, 95, 0.26);
+  --ab-accent: #2aa2a8;
+  --ab-accent-hover: #1f8c92;
+  --ab-accent-text: #1d7f85;
+  --ab-accent-contrast: #ffffff;
+  --ab-gradient-text: linear-gradient(120deg, #183638 0%, #1d7f85 100%);
+  --ab-gradient-button:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 45%, rgba(0, 0, 0, 0.05) 100%),
+    linear-gradient(135deg, #e09a5c 0%, #a8582a 100%);
+  --ab-glow: 0 0 0 1px rgba(42, 162, 168, 0.4), 0 8px 20px rgba(42, 162, 168, 0.18);
+  --ab-glow-violet: 0 0 0 1px rgba(184, 100, 47, 0.35), 0 8px 20px rgba(184, 100, 47, 0.16);
+  --ab-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 18px rgba(30, 78, 80, 0.1);
+  --ab-glass: linear-gradient(160deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.7) 100%);
+  --ab-metal: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.35) 45%, rgba(0, 0, 0, 0.03) 100%);
+  --ab-link: #1d8f96;
+  --ab-link-hover: #136b70;
+  --ab-success: #23965b;
+  --ab-success-bg: rgba(35, 150, 91, 0.1);
+  --ab-warning: #c76a0c;
+  --ab-warning-bg: rgba(199, 106, 12, 0.1);
+  --ab-danger: #d93c4a;
+  --ab-danger-bg: rgba(217, 60, 74, 0.09);
+  --ab-info: #2f6fd6;
+  --ab-info-bg: rgba(47, 111, 214, 0.09);
+  --ab-neutral-bg: rgba(40, 92, 95, 0.07);
+  --ab-spotlight: rgba(42, 162, 168, 0.1);
+  --ab-status-todo: #3fb6c4;
+  --ab-status-progress: #1597c9;
+  --ab-status-review: #d9781c;
+  --ab-status-done: #23965b;
+  --bs-link-color-rgb: 29, 143, 150;
+  background: radial-gradient(ellipse 70% 55% at 85% -10%, rgba(217, 138, 78, 0.1), transparent 70%), linear-gradient(180deg, var(--ab-bg-2), var(--ab-bg));
+  background-attachment: fixed;
+}
+
+/* ---------- Background: patina texture instead of neon blobs and particles ---------- */
+html[data-design="patina"] body { background: transparent; letter-spacing: 0.005em; }
+html[data-design="patina"] body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url("../img/patina.svg") center / cover no-repeat;
+  opacity: var(--ab-texture-opacity);
+}
+html[data-design="patina"] .ab-backdrop { display: none; }
+html[data-design="patina"] ::selection { background: rgba(63, 212, 196, 0.35); }
+
+/* ---------- Header: full-width dark teal bar (keeps the white logo readable) ---------- */
+html[data-design="patina"] .ab-navbar {
+  top: 0; width: 100%; margin: 0;
+  --ab-text: #eefbfc;
+  --ab-text-muted: #cfe3e4;
+  --ab-accent-text: #5fe3d4;
+  --ab-surface: rgba(255, 255, 255, 0.06);
+  --ab-surface-2: rgba(255, 255, 255, 0.09);
+  --ab-surface-3: rgba(255, 255, 255, 0.14);
+  --ab-surface-solid: #0f2526;
+  --ab-border: rgba(170, 232, 235, 0.22);
+  --ab-border-strong: rgba(178, 239, 242, 0.3);
+  --ab-link: #a4faff;
+  --ab-link-hover: #c7fcff;
+}
+html[data-design="patina"] .ab-navbar-inner {
+  border-radius: 0; border: 0; border-bottom: 1px solid rgba(170, 232, 235, 0.22);
+  padding: 0.55rem 1.5rem;
+  background: rgba(9, 22, 23, 0.96);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+html[data-design="patina"] .ab-navbar-inner::before {
+  left: 0; right: 0; top: auto; bottom: -1px; height: 2px; opacity: 0.75;
+  background: linear-gradient(90deg, transparent 0%, var(--ab-logo-orange) 30%, #3fd4c4 70%, transparent 100%);
+}
+html[data-design="patina"] .ab-nav { background: transparent; border: 0; padding: 0; gap: 0.2rem; }
+html[data-design="patina"] .ab-nav-indicator { display: none; }
+html[data-design="patina"] .ab-nav a { border-radius: 0.7rem; color: #cfe3e4; font-size: 0.9rem; }
+html[data-design="patina"] .ab-nav a:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+html[data-design="patina"] .ab-nav a.active,
+html[data-design="patina"] .ab-nav.has-indicator a.active {
+  background: rgba(255, 255, 255, 0.14); color: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1) inset, 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+html[data-design="patina"] .ab-nav a.active::after {
+  content: ""; position: absolute; left: 0.75rem; right: 0.75rem; bottom: 2px; height: 2px;
+  border-radius: 2px; background: var(--ab-logo-orange);
+}
+html[data-design="patina"] .ab-nav a.active .nav-icon { color: #fff; filter: none; }
+html[data-design="patina"] .ab-nav-project {
+  color: #3fd4c4; background: rgba(63, 212, 196, 0.08); border: 1px solid rgba(63, 212, 196, 0.4); box-shadow: none;
+}
+html[data-design="patina"] .ab-brand a:hover .brand-logo { filter: drop-shadow(0 0 10px rgba(63, 212, 196, 0.45)); }
+html[data-design="patina"] .ab-user-button:hover,
+html[data-design="patina"] .ab-user-button[aria-expanded="true"] { border-color: rgba(164, 250, 255, 0.6); }
+html[data-design="patina"] .ab-user-menu { --bs-dropdown-bg: rgba(12, 30, 31, 0.97); }
+html[data-design="patina"] .avatar {
+  background: linear-gradient(145deg, #63bfc4, #2e7478); color: #fff;
+  border: 2px solid rgba(226, 251, 252, 0.85);
+  box-shadow: 0 0 0 2px rgba(8, 18, 19, 0.9), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+html[data-design="patina"] .avatar.me { background: linear-gradient(145deg, #23c6e8, #4fd9e0); border-color: #bff6ff; }
+html[data-design="patina"] .avatar.has-color { background: var(--avatar-bg); color: var(--avatar-fg, #fff); }
+
+/* Brightness slider (replaces the light/dark toggle) */
+html[data-design="patina"] .theme-slider {
+  display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; cursor: pointer;
+  padding: 0.3rem 0.6rem; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09); border: 1px solid rgba(178, 239, 242, 0.3);
+}
+html[data-design="patina"] .theme-slider svg { width: 1rem; height: 1rem; flex-shrink: 0; transition: opacity 0.2s ease; }
+html[data-design="patina"] .theme-slider .icon-sun { color: #ffc56b; opacity: 0.45; }
+html[data-design="patina"] .theme-slider .icon-moon { color: var(--ab-copper); }
+html[data-design="patina"][data-theme="light"] .theme-slider .icon-sun { opacity: 1; }
+html[data-design="patina"][data-theme="light"] .theme-slider .icon-moon { opacity: 0.45; }
+html[data-design="patina"] .theme-slider input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 8rem; height: 1.25rem; margin: 0; background: transparent; cursor: grab;
+}
+html[data-design="patina"] .theme-slider input[type="range"]:active { cursor: grabbing; }
+html[data-design="patina"] .theme-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 0.45rem; border-radius: 999px; background: linear-gradient(90deg, #ffc56b, var(--ab-copper) 55%, #0e1f20);
+}
+html[data-design="patina"] .theme-slider input[type="range"]::-moz-range-track {
+  height: 0.45rem; border-radius: 999px; background: linear-gradient(90deg, #ffc56b, var(--ab-copper) 55%, #0e1f20);
+}
+html[data-design="patina"] .theme-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 1.15rem; height: 1.15rem; margin-top: -0.35rem; border-radius: 50%;
+  background: #fff; border: 2px solid var(--ab-copper); box-shadow: 0 0 10px rgba(123, 248, 255, 0.6);
+}
+html[data-design="patina"] .theme-slider input[type="range"]::-moz-range-thumb {
+  width: 1.15rem; height: 1.15rem; border-radius: 50%; background: #fff; border: 2px solid var(--ab-copper);
+  box-shadow: 0 0 10px rgba(123, 248, 255, 0.6);
+}
+html[data-design="patina"] .theme-level { min-width: 2.6rem; text-align: right; font-size: 0.75rem; font-weight: 600; color: #cfe3e4; font-variant-numeric: tabular-nums; }
+@media (max-width: 1399.98px) {
+  html[data-design="patina"] .theme-slider input[type="range"] { width: 5.5rem; }
+  html[data-design="patina"] .theme-level { display: none; }
+}
+
+/* ---------- Page header & text ---------- */
+html[data-design="patina"] .ab-page-header .eyebrow {
+  background: none; color: var(--ab-text-muted); -webkit-text-fill-color: currentColor;
+  font-size: 0.9rem; font-weight: 500; letter-spacing: 0; text-transform: none; animation: none;
+}
+html[data-design="patina"] .ab-page-header h1 { font-weight: 700; letter-spacing: -0.01em; color: var(--ab-text); }
+html[data-design="patina"] .ab-breadcrumb strong { color: var(--ab-text); font-weight: 500; }
+html[data-design="patina"] .item-key { color: var(--ab-text-muted); font-weight: 600; }
+html[data-design="patina"] .item-key:hover { color: var(--ab-accent); }
+
+/* ---------- Surfaces: glass over teal ---------- */
+html[data-design="patina"] .ab-card,
+html[data-design="patina"] .ab-tile,
+html[data-design="patina"] .ab-table-wrap,
+html[data-design="patina"] .project-card {
+  background: var(--ab-glass), var(--ab-surface);
+  border: 1px solid var(--ab-border);
+  box-shadow: var(--ab-shadow);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+html[data-design="patina"] .ab-card h2,
+html[data-design="patina"] .ab-card h3 { font-size: 1.15rem; color: var(--ab-text); }
+html[data-design="patina"] .ab-tile::after {
+  inset: 0 0 auto 0; height: 2px; padding: 0; opacity: 1; animation: none;
+  background: linear-gradient(90deg, transparent, rgba(63, 212, 196, 0.7), transparent);
+  -webkit-mask: none; mask: none;
+}
+html[data-design="patina"] .ab-tile:hover { border-color: rgba(63, 212, 196, 0.45); box-shadow: var(--ab-shadow), 0 0 26px rgba(63, 212, 196, 0.2); }
+html[data-design="patina"] .ab-tile .value { background: none; color: var(--ab-text); -webkit-text-fill-color: currentColor; font-weight: 700; }
+html[data-design="patina"] .tile-button:not(.collapsed) { border-color: rgba(63, 212, 196, 0.7); box-shadow: var(--ab-shadow), 0 0 22px rgba(63, 212, 196, 0.25); }
+html[data-design="patina"] .project-card:hover { border-color: rgba(63, 212, 196, 0.6); box-shadow: var(--ab-shadow), 0 0 28px rgba(63, 212, 196, 0.2); }
+html[data-design="patina"] .ab-note { background: var(--ab-glass), var(--ab-surface-2); border: 1px solid var(--ab-border); border-left: 4px solid var(--ab-accent); }
+html[data-design="patina"] .plan-item,
+html[data-design="patina"] .comment { background: var(--ab-glass), var(--ab-card); border-color: var(--ab-border); }
+html[data-design="patina"] .plan-item:hover { border-color: rgba(63, 212, 196, 0.5); box-shadow: -4px 0 0 0 var(--ab-accent); }
+html[data-design="patina"] .ab-row-link:hover,
+html[data-design="patina"] .clickable-row:hover > td,
+html[data-design="patina"] .ab-table tbody tr:hover td { background: rgba(63, 212, 196, 0.08); }
+html[data-design="patina"] .modal-content { background: var(--ab-glass), var(--ab-surface-solid); box-shadow: var(--ab-shadow); }
+
+/* ---------- Tables & forms ---------- */
+html[data-design="patina"] .ab-table thead th { background: var(--ab-metal), color-mix(in srgb, var(--ab-surface-3) 80%, transparent); letter-spacing: 0.08em; }
+html[data-design="patina"] .form-control,
+html[data-design="patina"] .form-select { background-color: var(--ab-input); border-color: color-mix(in srgb, var(--ab-accent) 35%, var(--ab-border-strong)); border-radius: 0.8rem; }
+html[data-design="patina"] .form-control:focus,
+html[data-design="patina"] .form-select:focus { background-color: var(--ab-input); box-shadow: var(--ab-focus), 0 0 18px rgba(63, 212, 196, 0.25); }
+html[data-design="patina"] .form-select { --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%233fd4c4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
+html[data-design="patina"] .form-check-input:checked { background-color: var(--ab-accent); border-color: var(--ab-accent); }
+
+/* ---------- Buttons: brushed metal ---------- */
+html[data-design="patina"] .btn-accent,
+html[data-design="patina"] .btn-accent:hover,
+html[data-design="patina"] .btn-accent:focus-visible,
+html[data-design="patina"] .btn-accent:active {
+  background: var(--ab-gradient-button); color: #fff;
+  border: 1px solid rgba(240, 176, 122, 0.75);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+html[data-design="patina"] .btn-accent { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 0 16px rgba(217, 138, 78, 0.45); }
+html[data-design="patina"] .btn-accent:hover,
+html[data-design="patina"] .btn-accent:focus-visible { border-color: #f6c08e; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 0 24px rgba(217, 138, 78, 0.65); }
+html[data-design="patina"][data-theme="light"] .btn-accent { border-color: #b8642f; text-shadow: 0 1px 1px rgba(80, 35, 10, 0.5); }
+html[data-design="patina"] .btn-ghost {
+  background: var(--ab-metal), color-mix(in srgb, var(--ab-surface-2) 80%, transparent); color: var(--ab-text);
+  border: 1px solid var(--ab-border-strong); border-radius: 999px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+html[data-design="patina"] .btn-ghost:hover,
+html[data-design="patina"] .btn-ghost:focus-visible,
+html[data-design="patina"] .btn-ghost:active {
+  background: var(--ab-metal), var(--ab-surface-3); color: var(--ab-text);
+  border-color: rgba(164, 250, 255, 0.6); box-shadow: 0 0 16px rgba(63, 212, 196, 0.25);
+}
+html[data-design="patina"] .btn-danger-soft,
+html[data-design="patina"] .btn-metal-danger {
+  --tone: #b8563f;
+  border-radius: 999px; font-weight: 700; color: #fff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.06) 46%, rgba(0, 0, 0, 0.18) 54%, rgba(255, 255, 255, 0.05) 100%),
+    linear-gradient(110deg, color-mix(in srgb, var(--tone) 70%, #1a0d0a) 0%, var(--tone) 50%, color-mix(in srgb, var(--tone) 65%, #1a0d0a) 100%);
+  border: 1px solid color-mix(in srgb, var(--tone) 65%, #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+html[data-design="patina"] .btn-danger-soft:hover,
+html[data-design="patina"] .btn-danger-soft:focus-visible,
+html[data-design="patina"] .btn-metal-danger:hover,
+html[data-design="patina"] .btn-metal-danger:focus-visible {
+  --tone: #d0452e; color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 0 14px rgba(208, 69, 46, 0.55);
+}
+html[data-design="patina"] .ab-tabs a.active,
+html[data-design="patina"] .filter-chip.active { background: var(--ab-gradient-button); color: #fff; box-shadow: 0 0 14px rgba(217, 138, 78, 0.4); }
+html[data-design="patina"] .filter-chip:hover { border-color: rgba(63, 212, 196, 0.6); }
+
+/* ---------- Badges: metallic pills ---------- */
+html[data-design="patina"] .ab-badge {
+  --tone: #a9b8b9;
+  border-radius: 999px; padding: 0.22rem 0.75rem; font-size: 0.72rem; letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--tone) 40%, #ffffff);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.06) 46%, rgba(0, 0, 0, 0.16) 54%, rgba(255, 255, 255, 0.04) 100%),
+    linear-gradient(110deg, color-mix(in srgb, var(--tone) 45%, #0d1a1b) 0%, color-mix(in srgb, var(--tone) 62%, #0d1a1b) 50%, color-mix(in srgb, var(--tone) 42%, #0d1a1b) 100%);
+  border: 1px solid color-mix(in srgb, var(--tone) 75%, #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  animation: none;
+}
+html[data-design="patina"] .badge-neutral { --tone: #a9b8b9; }
+html[data-design="patina"] .badge-success { --tone: #3fbf6f; }
+html[data-design="patina"] .badge-warning { --tone: #c8873e; }
+html[data-design="patina"] .badge-danger { --tone: #b8563f; }
+html[data-design="patina"] .badge-info { --tone: #6a8fb0; }
+html[data-design="patina"] .badge-critical,
+html[data-design="patina"] .badge-overdue { --tone: #d0452e; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 0 12px rgba(208, 69, 46, 0.45); }
+html[data-design="patina"] .badge-blocked { --tone: #c8873e; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 0 12px rgba(200, 135, 62, 0.4); }
+html[data-design="patina"] .label-badge { --tone: var(--label, #a9b8b9); }
+html[data-design="patina"][data-theme="light"] .ab-badge {
+  color: color-mix(in srgb, var(--tone) 55%, #10201f);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.25) 48%, rgba(0, 0, 0, 0.06) 54%, rgba(255, 255, 255, 0.35) 100%),
+    linear-gradient(110deg, color-mix(in srgb, var(--tone) 22%, #ffffff) 0%, color-mix(in srgb, var(--tone) 38%, #ffffff) 50%, color-mix(in srgb, var(--tone) 20%, #ffffff) 100%);
+  border-color: color-mix(in srgb, var(--tone) 70%, #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(0, 0, 0, 0.08), 0 1px 2px rgba(30, 60, 60, 0.15);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- Board: numbered column headers, cards with a status bar ---------- */
+html[data-design="patina"] .board-lane-columns { counter-reset: board-column; }
+html[data-design="patina"] .board-column {
+  --ab-col: var(--ab-status-todo);
+  counter-increment: board-column;
+  border-radius: 1.1rem; padding: 0 0.9rem 0.9rem;
+  border-color: color-mix(in srgb, var(--ab-col) 35%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ab-col) 10%, transparent) 0%, transparent 35%), var(--ab-column);
+  box-shadow: var(--ab-shadow);
+}
+html[data-design="patina"] .board-column[data-status="in_progress"] { --ab-col: var(--ab-status-progress); }
+html[data-design="patina"] .board-column[data-status="in_review"] { --ab-col: var(--ab-status-review); }
+html[data-design="patina"] .board-column[data-status="done"] { --ab-col: var(--ab-status-done); }
+html[data-design="patina"] .board-column::before { display: none; }
+html[data-design="patina"] .board-column header {
+  gap: 0.7rem; margin: 0 -0.9rem 0.9rem; padding: 0.9rem 1.1rem;
+  border-radius: 1.1rem 1.1rem 0 0;
+  background: var(--ab-metal), linear-gradient(135deg, color-mix(in srgb, var(--ab-col) 38%, transparent) 0%, color-mix(in srgb, var(--ab-col) 12%, transparent) 100%);
+  border-bottom: 1px solid color-mix(in srgb, var(--ab-col) 45%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+html[data-design="patina"] .board-column header::before {
+  content: counter(board-column, decimal-leading-zero);
+  font-size: 1.7rem; font-weight: 600; line-height: 1; color: var(--ab-col);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--ab-col) 60%, transparent);
+}
+html[data-design="patina"] .board-column header h2 { flex: 1; font-size: 1rem; letter-spacing: 0.03em; color: var(--ab-text); }
+html[data-design="patina"] .board-column header h2::before { display: none; }
+html[data-design="patina"] .board-count {
+  min-width: 1.9rem; height: 1.9rem; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; color: var(--ab-text); background: rgba(8, 18, 19, 0.35); border: 1px solid rgba(255, 255, 255, 0.28);
+}
+html[data-design="patina"][data-theme="light"] .board-count { background: var(--ab-surface-2); border-color: var(--ab-border-strong); }
+html[data-design="patina"] .board-card {
+  --bar: var(--ab-col, var(--ab-status-todo));
+  background: var(--ab-glass), var(--ab-card);
+  border: 1px solid color-mix(in srgb, var(--ab-border) 60%, transparent);
+  border-radius: 0.95rem; padding: 0.85rem 0.95rem 0.85rem 1.35rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+html[data-design="patina"] .board-card::before {
+  inset: 0.75rem auto 0.75rem 0.5rem; width: 4px; border-radius: 4px; opacity: 1; z-index: 0;
+  background: var(--bar); box-shadow: 0 0 10px color-mix(in srgb, var(--bar) 70%, transparent);
+}
+html[data-design="patina"] .board-card:hover { border-color: color-mix(in srgb, var(--bar) 55%, transparent); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 12px 26px rgba(0, 0, 0, 0.35); }
+html[data-design="patina"] .board-card.blocked { --bar: var(--ab-status-review); border: 1.5px solid var(--ab-status-review); }
+html[data-design="patina"] .board-column[data-status="todo"] .board-card.priority-high,
+html[data-design="patina"] .board-column[data-status="todo"] .board-card.priority-critical { --bar: var(--ab-danger); }
+html[data-design="patina"] .card-priority { font-weight: 500; font-size: 0.85rem; }
+html[data-design="patina"] .card-priority.priority-critical { font-weight: 700; }
+html[data-design="patina"] .board-card .title { font-size: 1.02rem; color: var(--ab-text); }
+html[data-design="patina"] .board-card .meta { border-top-color: color-mix(in srgb, var(--ab-border) 60%, transparent); }
+html[data-design="patina"] .board-column.over-limit { border-color: #d0452e; box-shadow: 0 0 0 1px #d0452e, 0 0 22px rgba(208, 69, 46, 0.35); }
+html[data-design="patina"] .board-column.over-limit .board-count { background: #b8563f; border-color: #f0a08c; color: #fff; }
+html[data-design="patina"] .epic-chip { border-radius: 0.4rem; }
+html[data-design="patina"] .board-effects-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 2000; }
+
+/* ---------- Progress, history, burndown ---------- */
+html[data-design="patina"] .progress { background: rgba(255, 255, 255, 0.08); }
+html[data-design="patina"][data-theme="light"] .progress { background: rgba(40, 92, 95, 0.1); }
+html[data-design="patina"] .progress-bar { background: linear-gradient(90deg, var(--ab-copper), var(--ab-accent)); box-shadow: 0 0 10px rgba(63, 212, 196, 0.55); }
+html[data-design="patina"] .history-entry { border-image: none; border-left: 2px solid var(--ab-border); }
+html[data-design="patina"] .history-entry::before { background: var(--ab-success); box-shadow: 0 0 8px rgba(59, 205, 128, 0.8); }
+html[data-design="patina"] svg.burndown .actual { filter: drop-shadow(0 0 6px rgba(63, 212, 196, 0.6)); }
+html[data-design="patina"] svg.burndown .marker { fill: var(--ab-card); stroke: var(--ab-accent); stroke-width: 2.5; filter: none; }
+html[data-design="patina"] svg.burndown .point:hover .marker { fill: var(--ab-accent); }
+html[data-design="patina"] svg.burndown .today { stroke: var(--ab-logo-orange); filter: none; }
+html[data-design="patina"] .burndown-legend { box-shadow: none; }
+html[data-design="patina"] .burndown-legend.today { border-top-color: var(--ab-logo-orange); }
+html[data-design="patina"] .epic-progress-fill,
+html[data-design="patina"] .sprint-progress-segment { box-shadow: none; }
+
+/* ---------- Light end of the slider ---------- */
+html[data-design="patina"][data-theme="light"] .board-card,
+html[data-design="patina"][data-theme="light"] .plan-item,
+html[data-design="patina"][data-theme="light"] .comment { box-shadow: 0 2px 8px rgba(30, 78, 80, 0.08); }
+html[data-design="patina"][data-theme="light"] .btn-close { filter: none; }

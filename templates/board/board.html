@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load agile static %}
+{% block title %}Agile Board · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Agile Board</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }}{% if sprint %} / {{ sprint.label }}{% endif %}</div>
+    <h1>Agile Board</h1>
+    <p>{% if sprint %}Sprint-Ziel: {{ sprint.goal|default:"–" }}{% else %}Der tägliche Arbeitsfortschritt auf einen Blick.{% endif %}</p>
+  </div>
+  <div class="actions align-items-center">
+    {% if sprint %}
+      <span class="ab-badge {{ sprint.status|badge_class }}">Sprint {{ sprint.get_status_display|lower }}</span>
+      {% if sprint.is_overdue %}<span class="ab-badge badge-overdue">Sprint überfällig seit {{ sprint.end_date|date:"d.m." }}</span>{% endif %}
+      <span class="ab-badge badge-warning" data-board-points>{{ points_done }}/{{ points_total }} Punkte fertig</span>
+      <a class="btn btn-ghost btn-sm" href="{% url 'sprints:detail' project.key sprint.number %}">Sprintplanung</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if not sprint %}
+  <div class="ab-card">
+    <h2>Kein aktiver Sprint</h2>
+    <p class="text-muted">Für dieses Projekt läuft derzeit kein Sprint. Plane einen Sprint und starte ihn, um das Board zu nutzen.</p>
+    <a class="btn btn-accent" href="{% url 'sprints:list' project.key %}">Zur Sprintplanung</a>
+  </div>
+{% else %}
+<form class="ab-filterbar" method="get" aria-label="Board filtern">
+  {% if filters.sprint %}<input type="hidden" name="sprint" value="{{ filters.sprint }}">{% endif %}
+  <label class="visually-hidden" for="b-assignee">Bearbeiter</label>
+  <select id="b-assignee" class="form-select" name="assignee" onchange="this.form.submit()"><option value="">Alle Bearbeiter</option><option value="none" {% if filters.assignee == 'none' %}selected{% endif %}>Nicht zugewiesen</option>{% for membership in members %}<option value="{{ membership.user.pk }}" {% if filters.assignee == membership.user.pk|stringformat:'s' %}selected{% endif %}>{{ membership.user.display_name }}</option>{% endfor %}</select>
+  <label class="visually-hidden" for="b-priority">Priorität</label>
+  <select id="b-priority" class="form-select" name="priority" onchange="this.form.submit()"><option value="">Alle Prioritäten</option>{% for value, label in priority_choices %}<option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <label class="visually-hidden" for="b-type">Typ</label>
+  <select id="b-type" class="form-select" name="type" onchange="this.form.submit()"><option value="">Alle Typen</option>{% for value, label in type_choices %}<option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <div class="form-check align-self-center">
+    <input class="form-check-input" type="checkbox" name="blocked" value="1" id="b-blocked" {% if filters.blocked == '1' %}checked{% endif %} onchange="this.form.submit()">
+    <label class="form-check-label" for="b-blocked">Nur blockierte</label>
+  </div>
+  <noscript><button class="btn btn-ghost" type="submit">Filtern</button></noscript>
+  {% if selectable_sprints|length > 1 %}
+  <label class="visually-hidden" for="b-sprint">Sprint</label>
+  <select id="b-sprint" class="form-select ms-auto" onchange="window.location.href='?sprint=' + this.value">
+    {% for option in selectable_sprints %}<option value="{{ option.number }}" {% if option == sprint %}selected{% endif %}>{{ option.label }} ({{ option.get_status_display }})</option>{% endfor %}
+  </select>
+  {% endif %}
+</form>
+<div class="board-toolbar">
+  <div class="chip-group" role="group" aria-label="Schnellfilter">
+    {% for chip in quick_filters %}<a class="filter-chip{% if chip.active %} active{% endif %}" href="{{ chip.url }}" role="button" aria-pressed="{{ chip.active|yesno:'true,false' }}">{{ chip.label }}</a>{% endfor %}
+  </div>
+  <div class="chip-group ms-auto" role="group" aria-label="Swimlanes">
+    <span class="text-muted small me-1">Swimlanes:</span>
+    {% for option in swimlane_options %}<a class="filter-chip{% if option.active %} active{% endif %}" href="{{ option.url }}"{% if option.active %} aria-current="true"{% endif %}>{{ option.label }}</a>{% endfor %}
+  </div>
+</div>
+{% if sprint.status != 'active' %}<div class="ab-note mb-3">Dieser Sprint ist {{ sprint.get_status_display|lower }}. Das Board ist schreibgeschützt.</div>{% endif %}
+
+<div class="board" {% if board_editable %}data-move-url="{% url 'board:move' project.key %}"{% endif %} {% if board_revision %}data-state-url="{% url 'board:state' project.key %}" data-revision="{{ board_revision }}" data-poll-interval="{{ poll_interval_ms }}"{% endif %} aria-label="Sprint-Board">
+  {% include "board/_lanes.html" %}
+</div>
+{% if board_editable %}<p class="text-muted small mt-3">Karten per Drag &amp; Drop verschieben oder per Tastatur über „Verschieben“. Änderungen werden sofort gespeichert; Änderungen anderer Mitarbeiter erscheinen automatisch.</p>{% endif %}
+{% if project.definition_of_done %}<details class="ab-card mt-3"><summary class="fw-bold">Definition of Done</summary><div class="prose text-muted mt-2">{{ project.definition_of_done }}</div></details>{% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if user.design == "patina" %}<script src="{% asset 'js/board-effects.js' %}"></script>{% endif %}<script src="{% asset 'js/board.js' %}"></script>{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "accounts/_auth_base.html" %}
+{% load agile %}
+{% block title %}Willkommen – Passwort festlegen{% endblock %}
+{% block content %}
+{% if validlink %}
+  <h1 class="h4 mb-2">Willkommen{% if form.user.first_name %}, {{ form.user.first_name }}{% endif %}!</h1>
+  <p class="text-muted">Passwort festlegen für dein Konto „{{ form.user.get_username }}“. Danach kannst du dich direkt anmelden.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field|bootstrap }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text|safe }}</div>{% endif %}
+        {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-accent w-100">Passwort speichern</button>
+  </form>
+{% else %}
+  <h1 class="h4 mb-3">Einladung nicht mehr gültig</h1>
+  <div class="alert alert-danger" role="alert">Dieser Einladungslink ist abgelaufen oder wurde bereits verwendet. Bitte wende dich an die Systemadministration, um eine neue Einladung zu erhalten.</div>
+  <a href="{% url 'accounts:login' %}">Zur Anmeldung</a>
+{% endif %}
+{% endblock %}

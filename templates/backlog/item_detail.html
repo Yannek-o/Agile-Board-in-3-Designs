@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ item.key }} · {{ item.title }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backlog:list' project.key %}">{{ project.key }} Backlog</a> / <strong>{{ item.key }}</strong>{% endblock %}
+{% block content %}
+{% include "backlog/_item_panel.html" %}
+{% endblock %}

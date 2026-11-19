@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Benachrichtigungen{% endblock %}
+{% block breadcrumb %}<strong>Benachrichtigungen</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Persönlich</div>
+    <h1>Benachrichtigungen</h1>
+    <p>Zuweisungen, Erwähnungen, Kommentare und Statusänderungen an beobachteten Einträgen</p>
+  </div>
+  {% if unread_notifications %}
+  <div class="actions">
+    <form method="post" action="{% url 'notifications:mark_all_read' %}">{% csrf_token %}<button type="submit" class="btn btn-ghost">Alle als gelesen markieren</button></form>
+  </div>
+  {% endif %}
+</div>
+<div class="ab-card">
+  {% for notification in notifications %}
+    <a class="notification-row{% if notification.is_unread %} unread{% endif %}" href="{% url 'notifications:open' notification.pk %}">
+      {% include "includes/avatar.html" with user=notification.actor small=True %}
+      <span class="flex-grow-1">
+        <span class="d-block">{{ notification.message }}</span>
+        <small class="text-muted">{{ notification.get_kind_display }} · {{ notification.created_at|date:"d.m.Y H:i" }}{% if notification.item %} · {{ notification.item.key }}{% endif %}</small>
+      </span>
+      {% if notification.is_unread %}<span class="unread-dot" aria-label="ungelesen"></span>{% endif %}
+    </a>
+  {% empty %}
+    <p class="text-muted mb-0">Noch keine Benachrichtigungen. Beobachte Einträge oder lass dich mit @name erwähnen.</p>
+  {% endfor %}
+</div>
+{% include "includes/pagination.html" %}
+{% endblock %}

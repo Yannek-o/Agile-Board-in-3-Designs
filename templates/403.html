@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Keine Berechtigung{% endblock %}
+{% block breadcrumb %}<strong>Keine Berechtigung</strong>{% endblock %}
+{% block content %}
+<div class="ab-card">
+  <h1 class="h4">Keine Berechtigung</h1>
+  <p class="text-muted mb-3">Für diese Aktion fehlen die erforderlichen Rechte. Bitte wende dich an die Projektleitung.</p>
+  <a class="btn btn-ghost" href="{% url 'reporting:dashboard' %}">Zum Dashboard</a>
+</div>
+{% endblock %}

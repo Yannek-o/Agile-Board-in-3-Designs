@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{% if project %}{{ project.name }} bearbeiten{% else %}Neues Projekt{% endif %}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:list' %}">Projekte</a> / <strong>{% if project %}{{ project.key }}{% else %}Neu{% endif %}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Projektmanagement</div>
+    <h1>{% if project %}{{ project.name }} bearbeiten{% else %}Neues Softwareprojekt{% endif %}</h1>
+    <p>Product Goal und Definition of Done gelten für alle Sprints dieses Projekts.</p>
+  </div>
+</div>
+<div class="ab-card" style="max-width:60rem">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-accent">Speichern</button>
+      <a class="btn btn-ghost" href="{% if project %}{% url 'projects:detail' project.key %}{% else %}{% url 'projects:list' %}{% endif %}">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Nicht gefunden{% endblock %}
+{% block breadcrumb %}<strong>Nicht gefunden</strong>{% endblock %}
+{% block content %}
+<div class="ab-card">
+  <h1 class="h4">Seite nicht gefunden</h1>
+  <p class="text-muted mb-3">Die angeforderte Seite existiert nicht oder du hast keinen Zugriff darauf.</p>
+  <a class="btn btn-ghost" href="{% url 'reporting:dashboard' %}">Zum Dashboard</a>
+</div>
+{% endblock %}

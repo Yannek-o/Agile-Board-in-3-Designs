@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}Sprints · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Sprints</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.name }} / Sprints</div>
+    <h1>Sprintplanung</h1>
+    <p>Geplante, laufende und vergangene Sprints</p>
+  </div>
+  {% if access.can_manage_backlog %}<div class="actions"><a class="btn btn-accent" href="{% url 'sprints:create' project.key %}">+ Neuer Sprint</a></div>{% endif %}
+</div>
+<div class="ab-table-wrap">
+  <table class="table ab-table table-hover">
+    <thead><tr><th>Sprint</th><th>Sprint-Ziel</th><th>Zeitraum</th><th>Fortschritt</th><th>Einträge</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for sprint in sprints %}
+      {% with progress=sprint.point_breakdown %}
+      <tr class="clickable-row">
+        <td><a class="fw-bold stretched-link" href="{% url 'sprints:detail' project.key sprint.number %}">{{ sprint.label }}</a></td>
+        <td>{{ sprint.goal|truncatechars:90|default:"–" }}</td>
+        <td class="text-nowrap">{{ sprint.start_date|date:"d.m." }} – {{ sprint.end_date|date:"d.m.Y" }}</td>
+        <td class="sprint-progress-cell">
+          <div class="sprint-progress" role="img" aria-label="{{ progress.done }} von {{ progress.total }} Story Points erledigt{% for segment in progress.segments %}, {{ segment.label }}: {{ segment.points }}{% endfor %}">
+            {% for segment in progress.segments %}<span class="sprint-progress-segment" data-status="{{ segment.status }}" style="flex-grow: {{ segment.points }}" title="{{ segment.label }}: {{ segment.points }} SP"></span>{% endfor %}
+          </div>
+          <div class="sprint-progress-meta">
+            <span>{{ progress.done }}/{{ progress.total }} SP</span>
+            {% if progress.days_left is not None %}<span>{% if progress.days_left == 0 %}letzter Tag{% else %}noch {{ progress.days_left }} Tag{{ progress.days_left|pluralize:"e" }}{% endif %}</span>{% endif %}
+          </div>
+        </td>
+        <td>{{ sprint.item_count }}</td>
+        <td><span class="ab-badge {{ sprint.status|badge_class }}">{{ sprint.get_status_display }}</span></td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      <tr><td colspan="6" class="text-muted">Noch keine Sprints angelegt.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="text-muted small mt-2">Scrum: Sprints dauern höchstens einen Monat. Pro Projekt kann jeweils ein Sprint aktiv sein.</p>
+{% endblock %}

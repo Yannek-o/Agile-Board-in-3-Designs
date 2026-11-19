@@ -1,0 +1,11 @@
+<section class="report-group tone-{{ tone }}">
+  <h3>{{ title }} <span class="text-muted fw-normal">({{ rows|length }})</span></h3>
+  {% for row in rows %}
+    <div class="report-row">
+      <a class="item-key small" href="{% url 'backlog:detail' row.item.project.key row.item.number %}" data-item-modal data-item-key="{{ row.item.key }}">{{ row.item.key }}</a>
+      <span class="report-title">{{ row.item.title }}</span>
+      {% if row.added_late %}<span class="ab-badge badge-info" title="Nach dem Sprintstart hinzugefügt">neu</span>{% endif %}
+      <span class="report-points">{{ row.points }} SP</span>
+    </div>
+  {% empty %}<p class="text-muted small mb-0">{{ empty }}</p>{% endfor %}
+</section>

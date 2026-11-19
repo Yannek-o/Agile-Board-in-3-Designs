@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{% if employee %}Konto bearbeiten{% else %}Neues Konto{% endif %}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'accounts:user_list' %}">Mitarbeiterkonten</a> / <strong>{% if employee %}{{ employee.display_name }}{% else %}Neu{% endif %}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">Administration</div>
+    <h1>{% if employee %}{{ employee.display_name }} bearbeiten{% else %}Neues Mitarbeiterkonto{% endif %}</h1>
+    <p>Systemadministration ist von Scrum-Verantwortlichkeiten unabhängig.</p>
+  </div>
+</div>
+<div class="ab-card" style="max-width:56rem">
+  {% if not employee %}<div class="ab-note mb-3">Die Person erhält eine <strong>Einladung per E-Mail</strong> und legt ihr Passwort selbst fest. Der Link ist 7 Tage gültig.</div>{% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "includes/form_fields.html" %}
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-accent">{% if employee %}Speichern{% else %}Anlegen &amp; einladen{% endif %}</button>
+      <a class="btn btn-ghost" href="{% url 'accounts:user_list' %}">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% if employee %}
+<details class="ab-card ab-collapsible mt-3" style="max-width:56rem" {% if account_events %}open{% endif %}>
+  <summary><h2>Verlauf <span class="text-muted fw-normal">({{ account_events|length }})</span></h2></summary>
+  <ul class="list-unstyled mt-3 mb-0">
+    {% for event in account_events %}
+      <li class="d-flex flex-wrap gap-2 py-1 border-bottom border-secondary-subtle">
+        <span class="text-muted small text-nowrap">{{ event.created_at|date:"d.m.Y H:i" }}</span>
+        <strong>{{ event.get_action_display }}</strong>
+        {% if event.details %}<span class="text-muted">– {{ event.details }}</span>{% endif %}
+        <span class="ms-auto small text-muted">von {{ event.actor.display_name|default:"System" }}</span>
+      </li>
+    {% empty %}<li class="text-muted">Noch keine Änderungen protokolliert.</li>{% endfor %}
+  </ul>
+</details>
+{% endif %}
+{% endblock %}

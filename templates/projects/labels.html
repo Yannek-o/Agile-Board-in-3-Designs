@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Labels · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:detail' project.key %}">{{ project.key }}</a> / <strong>Labels</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div><div class="eyebrow">{{ project.name }}</div><h1>Labels</h1><p>Projektbezogene Aufgabenkategorien</p></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="ab-table-wrap">
+      <table class="table ab-table">
+        <thead><tr><th>Label</th><th>Einträge</th>{% if access.can_manage_backlog %}<th><span class="visually-hidden">Aktion</span></th>{% endif %}</tr></thead>
+        <tbody>
+        {% for label in labels %}
+          <tr>
+            <td><span class="ab-badge" style="background: {{ label.color }}33; color: {{ label.color }}">{{ label.name }}</span></td>
+            <td>{{ label.item_count }}</td>
+            {% if access.can_manage_backlog %}
+            <td class="text-end"><form method="post" action="{% url 'projects:label_delete' project.key label.pk %}" onsubmit="return confirm('Label löschen?');">{% csrf_token %}<button class="btn btn-sm btn-danger-soft" type="submit">Löschen</button></form></td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-muted">Noch keine Labels.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if access.can_manage_backlog %}
+  <div class="col-lg-5">
+    <div class="ab-card">
+      <h2>Neues Label</h2>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "includes/form_fields.html" %}
+        <button type="submit" class="btn btn-accent mt-3">Anlegen</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

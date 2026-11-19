@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Epics · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backlog:list' project.key %}">{{ project.key }} Backlog</a> / <strong>Epics</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div><div class="eyebrow">{{ project.name }} / Product Backlog</div><h1>Epics</h1><p>Größere Themen, unter denen zusammengehörige Einträge gebündelt werden</p></div>
+</div>
+{% include "backlog/_tabs.html" with active_tab="epics" %}
+<div class="row g-3">
+  <div class="{% if access.can_manage_backlog %}col-lg-8{% else %}col-12{% endif %}">
+    <div class="epic-grid">
+    {% for row in epics %}
+      <article class="ab-card epic-card" style="--epic: {{ row.epic.display_color }}">
+        <header class="epic-card-head">
+          <span class="epic-dot" aria-hidden="true"></span>
+          <a class="item-key small" href="{% url 'backlog:detail' project.key row.epic.number %}">{{ row.epic.key }}</a>
+          <h2 class="epic-card-title"><a class="text-reset" href="{% url 'backlog:list' project.key %}?epic={{ row.epic.pk }}">{{ row.epic.title }}</a></h2>
+        </header>
+        {% if row.epic.description %}<p class="text-muted small mb-2">{{ row.epic.description|truncatechars:140 }}</p>{% endif %}
+        <div class="epic-progress" role="progressbar" aria-valuenow="{{ row.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ row.epic.title }}: {{ row.done_points }} von {{ row.total_points }} Story Points erledigt">
+          <span class="epic-progress-fill" style="width: {{ row.percent }}%"></span>
+        </div>
+        <div class="epic-progress-meta">
+          <span>{{ row.done_points }}/{{ row.total_points }} SP · {{ row.percent }} %</span>
+          <span>{{ row.done_items }}/{{ row.items }} Einträge erledigt</span>
+        </div>
+      </article>
+    {% empty %}
+      <p class="ab-note">Noch keine Epics.{% if access.can_manage_backlog %} Lege rechts das erste an, z. B. „Benachrichtigungen“.{% endif %}</p>
+    {% endfor %}
+    </div>
+  </div>
+  {% if access.can_manage_backlog %}
+  <div class="col-lg-4">
+    <div class="ab-card">
+      <h2>Neues Epic</h2>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "includes/form_fields.html" %}
+        <button type="submit" class="btn btn-accent mt-3">Anlegen</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

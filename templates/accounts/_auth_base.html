@@ -1,0 +1,25 @@
+{% load static agile %}<!DOCTYPE html>
+<html lang="de" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Anmelden{% endblock %} · Agile Board</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% asset 'css/app.css' %}">
+  <script src="{% asset 'js/theme.js' %}"></script>
+</head>
+<body>
+{% include "includes/backdrop.html" %}
+{% include "includes/theme_toggle.html" with extra_class="ab-theme-toggle-floating" %}
+<main class="ab-login">
+  <div class="ab-card ab-login-card">
+    <div class="ab-brand border-0 p-0 mb-4">
+      <span class="ab-login-brand">{% include "includes/brand.html" %}</span>
+      <small>DEVELOPMENT BOARD · INTERN</small>
+    </div>
+    {% block content %}{% endblock %}
+  </div>
+</main>
+<script src="{% asset 'js/effects.js' %}"></script>
+</body>
+</html>

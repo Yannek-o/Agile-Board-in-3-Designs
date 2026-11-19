@@ -1,0 +1,1 @@
+{% autoescape off %}[{{ project.key }}] Neuer Kommentar zu {{ item.key }}: {{ item.title|truncatechars:80 }}{% endautoescape %}

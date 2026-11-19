@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load agile %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'projects:list' %}">Projekte</a> / <strong>{{ project.key }}</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div>
+    <div class="eyebrow">{{ project.key }} · {% if project.is_archived %}Archiviert{% else %}{{ project.get_status_display }}{% endif %}</div>
+    <h1>{{ project.name }}</h1>
+    <p>{{ project.description|default:"Keine Beschreibung" }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-ghost" href="{% url 'backlog:list' project.key %}">Product Backlog</a>
+    <a class="btn btn-ghost" href="{% url 'sprints:list' project.key %}">Sprints</a>
+    <a class="btn btn-accent" href="{% url 'board:board' project.key %}">Agile Board</a>
+    {% if access.can_manage_project %}
+      <a class="btn btn-ghost" href="{% url 'projects:edit' project.key %}">Bearbeiten</a>
+      {% if project.is_archived %}
+        <form method="post" action="{% url 'projects:restore' project.key %}">{% csrf_token %}<button class="btn btn-ghost" type="submit">Wiederherstellen</button></form>
+      {% else %}
+        <form method="post" action="{% url 'projects:archive' project.key %}" onsubmit="return confirm('Projekt archivieren? Es bleibt erhalten und kann wiederhergestellt werden.');">{% csrf_token %}<button class="btn btn-danger-soft" type="submit">Archivieren</button></form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% if project.is_archived %}<div class="ab-note mb-3">Dieses Projekt ist archiviert. Daten bleiben vollständig erhalten.</div>{% endif %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">Einträge gesamt</div><div class="value">{{ item_total }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">In Arbeit</div><div class="value">{{ item_counts|get_item:'in_progress'|default:0 }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">In Review</div><div class="value">{{ item_counts|get_item:'in_review'|default:0 }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="ab-tile"><div class="label">Erledigt</div><div class="value">{{ item_counts|get_item:'done'|default:0 }}</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="ab-card mb-3">
+      <h2>Product Goal</h2>
+      <p class="prose mb-0">{{ project.product_goal|default:"Noch kein Product Goal festgelegt." }}</p>
+    </div>
+    <div class="ab-card mb-3">
+      <h2>Definition of Done</h2>
+      <p class="prose mb-0">{{ project.definition_of_done|default:"Noch keine Definition of Done festgelegt." }}</p>
+    </div>
+    <div class="ab-card">
+      <div class="d-flex justify-content-between"><h2>Letzte Aktivitäten</h2><a href="{% url 'activity:list' project.key %}">Alle anzeigen</a></div>
+      {% for event in recent_events %}
+        <div class="history-entry"><strong>{{ event.actor|default:"System" }}</strong> · {{ event.get_action_display }}{% if event.item %} · <a href="{% url 'backlog:detail' project.key event.item.number %}">{{ event.item.key }}</a>{% endif %}{% if event.message %} – {{ event.message }}{% endif %}<div class="text-muted small">{{ event.created_at|date:"d.m.Y H:i" }}</div></div>
+      {% empty %}<p class="text-muted mb-0">Noch keine Aktivitäten.</p>{% endfor %}
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="ab-card mb-3">
+      <h2>Aktiver Sprint</h2>
+      {% if active_sprint %}
+        <a href="{% url 'sprints:detail' project.key active_sprint.number %}" class="fw-bold">{{ active_sprint.label }}</a>
+        <p class="text-muted small mb-1">{{ active_sprint.start_date|date:"d.m." }} – {{ active_sprint.end_date|date:"d.m.Y" }}</p>
+        <p class="mb-0">{{ active_sprint.goal }}</p>
+      {% else %}<p class="text-muted mb-0">Kein aktiver Sprint.</p>{% endif %}
+    </div>
+    <div class="ab-card mb-3">
+      <div class="d-flex justify-content-between"><h2>Team</h2><a href="{% url 'projects:team' project.key %}">Verwalten</a></div>
+      {% for membership in members %}
+        <div class="d-flex align-items-center gap-2 mb-2">{% include "includes/avatar.html" with user=membership.user small=True %}<span class="flex-grow-1">{{ membership.user.display_name }}</span><span class="ab-badge {{ membership.scrum_role|badge_class }}">{{ membership.get_scrum_role_display }}</span></div>
+      {% empty %}<p class="text-muted mb-0">Noch keine Mitglieder.</p>{% endfor %}
+    </div>
+    <div class="ab-card">
+      <h2>Weitere Bereiche</h2>
+      <ul class="list-unstyled mb-0">
+        <li><a href="{% url 'projects:labels' project.key %}">Labels</a></li>
+        <li><a href="{% url 'reporting:project_report' project.key %}">Berichte</a></li>
+        <li><a href="{% url 'activity:list' project.key %}">Änderungsprotokoll</a></li>
+      </ul>
+      <p class="text-muted small mt-3 mb-0">Angelegt am {{ project.created_at|date:"d.m.Y" }}{% if project.created_by %} von {{ project.created_by }}{% endif %}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

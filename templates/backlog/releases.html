@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Releases · {{ project.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'backlog:list' project.key %}">{{ project.key }} Backlog</a> / <strong>Releases</strong>{% endblock %}
+{% block content %}
+<div class="ab-page-header">
+  <div><div class="eyebrow">{{ project.name }} / Product Backlog</div><h1>Releases</h1><p>Versionen planen, Fortschritt verfolgen und veröffentlichen</p></div>
+</div>
+{% include "backlog/_tabs.html" with active_tab="releases" %}
+<div class="row g-3">
+  <div class="{% if access.can_manage_backlog %}col-lg-8{% else %}col-12{% endif %}">
+    <div class="release-list">
+    {% for row in releases %}
+      <article class="ab-card release-card{% if row.release.is_released %} released{% endif %}">
+        <header class="release-head">
+          <h2 class="release-name"><a class="text-reset" href="{% url 'backlog:list' project.key %}?release={{ row.release.pk }}">{{ row.release.name }}</a></h2>
+          <span class="ab-badge {% if row.release.is_released %}badge-success{% else %}badge-info{% endif %}">{{ row.release.get_status_display }}</span>
+          <span class="text-muted small ms-auto">{% if row.release.is_released %}am {{ row.release.released_at|date:"d.m.Y" }}{% elif row.release.release_date %}geplant {{ row.release.release_date|date:"d.m.Y" }}{% else %}ohne Datum{% endif %}</span>
+        </header>
+        {% if row.release.description %}<p class="text-muted small mb-2">{{ row.release.description|truncatechars:160 }}</p>{% endif %}
+        <div class="epic-progress" role="progressbar" aria-valuenow="{{ row.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ row.release.name }}: {{ row.done_items }} von {{ row.items }} Einträgen erledigt" style="--epic: var(--ab-status-done)">
+          <span class="epic-progress-fill" style="width: {{ row.percent }}%"></span>
+        </div>
+        <div class="epic-progress-meta">
+          <span>{{ row.done_items }}/{{ row.items }} Einträge · {{ row.percent }} %</span>
+          <span>{{ row.done_points }}/{{ row.points }} SP</span>
+        </div>
+        {% if access.can_manage_backlog and not row.release.is_released %}
+        <form method="post" action="{% url 'backlog:release_publish' project.key row.release.pk %}" class="mt-2 text-end"{% if row.open_items %} onsubmit="return confirm('{{ row.open_items }} Einträge sind noch nicht erledigt. Trotzdem veröffentlichen?');"{% endif %}>
+          {% csrf_token %}<button class="btn btn-sm btn-ghost" type="submit">Veröffentlichen</button>
+        </form>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p class="ab-note">Noch keine Releases.{% if access.can_manage_backlog %} Lege rechts das erste an, z. B. „v1.0“.{% endif %}</p>
+    {% endfor %}
+    </div>
+  </div>
+  {% if access.can_manage_backlog %}
+  <div class="col-lg-4">
+    <div class="ab-card">
+      <h2>Neues Release</h2>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "includes/form_fields.html" %}
+        <button type="submit" class="btn btn-accent mt-3">Anlegen</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

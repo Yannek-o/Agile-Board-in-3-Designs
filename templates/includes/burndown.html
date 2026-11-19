@@ -1,0 +1,53 @@
+{% load l10n %}{% if burndown %}
+<details class="ab-card ab-collapsible {{ extra_class }}" open>
+  <summary>
+    <h2 id="burndown-heading-{{ burndown_id|default:'main' }}">Burndown{% if burndown_title %} · {{ burndown_title }}{% endif %}</h2>
+    {% if burndown.plan_delta is not None %}
+      <span class="ms-auto ab-badge {% if burndown.plan_delta > 0 %}badge-danger{% elif burndown.plan_delta < 0 %}badge-success{% else %}badge-info{% endif %}">
+        {% if burndown.plan_delta > 0 %}{{ burndown.plan_delta_abs|floatformat:"-1" }} SP hinter Plan{% elif burndown.plan_delta < 0 %}{{ burndown.plan_delta_abs|floatformat:"-1" }} SP vor Plan{% else %}Genau im Plan{% endif %}
+      </span>
+    {% endif %}
+  </summary>
+  <div class="small text-muted d-flex gap-3 justify-content-end mt-2">
+    <span><span class="burndown-legend ideal" aria-hidden="true"></span> Ideal</span>
+    <span><span class="burndown-legend actual" aria-hidden="true"></span> Verbleibende Story Points</span>
+    {% if burndown.today_x is not None %}<span><span class="burndown-legend today" aria-hidden="true"></span> Heute</span>{% endif %}
+  </div>
+  {% localize off %}<svg class="burndown" viewBox="0 0 {{ burndown.width }} {{ burndown.height }}" role="img" aria-labelledby="burndown-heading-{{ burndown_id|default:'main' }}" aria-describedby="burndown-desc-{{ burndown_id|default:'main' }}">
+    <desc id="burndown-desc-{{ burndown_id|default:'main' }}">Start {{ burndown.initial_scope }} Story Points. Die Tageswerte stehen in der Tabelle unter dem Diagramm.</desc>
+    <defs>
+      <linearGradient id="burndown-fill-{{ burndown_id|default:'main' }}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="currentColor" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    {% for line in burndown.gridlines %}
+      <line class="grid{% if line.value == 0 %} axis{% endif %}" x1="{{ burndown.plot_left }}" y1="{{ line.y }}" x2="{{ burndown.plot_right }}" y2="{{ line.y }}"/>
+      <text class="label" x="{{ burndown.plot_left|add:'-8' }}" y="{{ line.y }}" dy="4" text-anchor="end">{{ line.value }}</text>
+    {% endfor %}
+    {% for tick in burndown.day_ticks %}
+      <line class="tick" x1="{{ tick.x }}" y1="{{ burndown.plot_bottom }}" x2="{{ tick.x }}" y2="{{ burndown.plot_bottom|add:'4' }}"/>
+      {% if tick.labeled %}<text class="label" x="{{ tick.x }}" y="{{ burndown.label_y }}" text-anchor="{% if forloop.first %}start{% elif forloop.last %}end{% else %}middle{% endif %}">{{ tick.day|date:"d.m." }}</text>{% endif %}
+    {% endfor %}
+    {% if burndown.today_x is not None %}<line class="today" x1="{{ burndown.today_x }}" y1="{{ burndown.plot_top }}" x2="{{ burndown.today_x }}" y2="{{ burndown.plot_bottom }}"/>{% endif %}
+    <polyline class="ideal" points="{{ burndown.ideal_points }}"/>
+    {% if burndown.area_points %}<polygon class="area" points="{{ burndown.area_points }}" fill="url(#burndown-fill-{{ burndown_id|default:'main' }})"/>{% endif %}
+    {% if burndown.actual_points %}<polyline class="actual" pathLength="1" points="{{ burndown.actual_points }}"/>{% endif %}
+    {% for point in burndown.day_points %}
+      <g class="point" style="--ab-i: {{ forloop.counter0 }}">
+        <title>{{ point.day|date:"D d.m." }}: {{ point.remaining }} SP offen (Ideal {{ point.ideal|floatformat:"-1" }})</title>
+        <line class="guide" x1="{{ point.x }}" y1="{{ burndown.plot_top }}" x2="{{ point.x }}" y2="{{ burndown.plot_bottom }}"/>
+        <circle class="marker" cx="{{ point.x }}" cy="{{ point.y }}" r="4"/>
+        <circle class="hit" cx="{{ point.x }}" cy="{{ point.y }}" r="14"/>
+      </g>
+    {% endfor %}
+  </svg>{% endlocalize %}
+  <details class="mt-2">
+    <summary class="small">Werte als Tabelle</summary>
+    <table class="table ab-table table-sm mt-2">
+      <thead><tr><th>Tag</th><th>Ideal</th><th>Verbleibend</th></tr></thead>
+      <tbody>{% for row in burndown.rows %}<tr><td>{{ row.day|date:"D d.m." }}</td><td>{{ row.ideal }}</td><td>{{ row.remaining|default_if_none:"–" }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </details>
+</details>
+{% endif %}

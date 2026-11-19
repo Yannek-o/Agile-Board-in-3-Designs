@@ -1,0 +1,17 @@
+{% load l10n %}{% if flow %}
+<details class="ab-card ab-collapsible {{ extra_class }}" open>
+  <summary><h2 id="cfd-heading">Cumulative Flow <span class="text-muted fw-normal small">· letzte {{ flow.rows|length }} Tage</span></h2></summary>
+  <div class="small text-muted d-flex flex-wrap gap-3 justify-content-end mt-2">
+    {% for band in flow.bands reversed %}<span><span class="chart-legend status-{{ band.status }}" aria-hidden="true"></span> {{ band.label }} ({{ band.latest }})</span>{% endfor %}
+  </div>
+  {% localize off %}<svg class="chart cfd" viewBox="0 0 {{ flow.width }} {{ flow.height }}" role="img" aria-labelledby="cfd-heading">
+    {% for band in flow.bands %}<polygon class="band status-{{ band.status }}" points="{{ band.points }}"><title>{{ band.label }}</title></polygon>{% endfor %}
+    {% for line in flow.gridlines %}
+      <line class="grid{% if line.value == 0 %} axis{% endif %}" x1="{{ flow.plot_left }}" y1="{{ line.y }}" x2="{{ flow.plot_right }}" y2="{{ line.y }}"/>
+      <text class="label" x="{{ flow.plot_left|add:'-8' }}" y="{{ line.y }}" dy="4" text-anchor="end">{{ line.value }}</text>
+    {% endfor %}
+    {% for tick in flow.day_ticks %}{% if tick.labeled %}<text class="label" x="{{ tick.x }}" y="{{ flow.label_y }}" text-anchor="{% if forloop.first %}start{% elif forloop.last %}end{% else %}middle{% endif %}">{{ tick.day|date:"d.m." }}</text>{% endif %}{% endfor %}
+  </svg>{% endlocalize %}
+  <p class="small text-muted mt-2 mb-0">Breiter werdende Bänder für „In Progress“ oder „In Review“ zeigen einen Stau im Arbeitsfluss.</p>
+</details>
+{% endif %}
